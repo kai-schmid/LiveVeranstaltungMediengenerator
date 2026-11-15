@@ -1,15 +1,68 @@
 {
   "name": "atem-liedertafel",
+  "productName": "Liedertafel",
   "version": "1.0.0",
+  "description": "Liedertafel-Generator für Blackmagic ATEM Mischer",
+  "author": "Kai Schmid",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
   },
   "devDependencies": {
     "electron": "^30.0.0",
+    "electron-builder": "^26.18.0",
     "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "atem-connection": "^3.3.0"
+  },
+  "build": {
+    "appId": "de.liedertafel.atem",
+    "productName": "Liedertafel",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "npmRebuild": false,
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}-windows-setup-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-windows-portable-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "category": "public.app-category.video",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "linux": {
+      "target": [
+        { "target": "deb", "arch": ["x64"] },
+        { "target": "rpm", "arch": ["x64"] }
+      ],
+      "category": "AudioVideo",
+      "maintainer": "Kai Schmid <kai.schmid@hvo-connect.de>",
+      "synopsis": "Liedertafel-Generator für Blackmagic ATEM Mischer"
+    }
   }
 }
