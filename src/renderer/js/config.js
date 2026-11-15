@@ -34,7 +34,14 @@ function readRenderConfig() {
         },
         text: {
             strophenSize: number('strophenSize'),
-            showPrefix: checked('showStrPrefix')
+            showPrefix: checked('showStrPrefix'),
+            mode: value('textMode'),               // 'plain' | 'cards' | 'digitCards'
+            cardColor: value('cardColor'),
+            cardHeight: percent('cardHeight'),     // Anteil der Zeilenhöhe 0..1
+            cardGap: number('cardGap'),            // Abstand der Ziffern-Karten (Basis-Pixel)
+            customColors: checked('useCustomTextColor')
+                ? { number: value('numberTextColor'), strophen: value('strophenTextColor') }
+                : null
         }
     };
 }

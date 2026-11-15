@@ -31,6 +31,7 @@ function save() {
 }
 
 function handleChange(el) {
+    if (el.dataset.enables) document.getElementById(el.dataset.enables).checked = true;
     updateDisplay(el);
     save();
     if (el.dataset.setting === 'render') onRenderNeeded();

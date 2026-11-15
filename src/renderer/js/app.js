@@ -15,20 +15,9 @@ function render() {
     fullscreen.pushFrame(canvas);
 }
 
-// Beim Ändern einer Randfarbe die eigene Randfarbe automatisch aktivieren
-function enableCustomBorderOnColorPick() {
-    const useCustomBorder = document.getElementById('useCustomBorder');
-    ['customBorderColor', 'customInnerBorderColor'].forEach(id => {
-        document.getElementById(id).addEventListener('input', () => {
-            useCustomBorder.checked = true;
-        });
-    });
-}
-
 async function start() {
     settings.init({ onRender: render });
     valueDialog.init({ onApply: settings.setValue });
-    enableCustomBorderOnColorPick();
     songs.init({ onSongsChanged: render });
     imageStore.init({ onImagesChanged: render });
     actions.init(canvas);

@@ -1,6 +1,7 @@
 // Setzt das komplette Bild zusammen: Hintergrund, Tafel, Liednummern & Strophen.
 const { drawImageFill } = require('./image-fill');
 const { drawBoard, drawDivider } = require('./boards');
+const { drawSongText } = require('./song-text');
 
 // Alle Maße beziehen sich auf eine 1920 px breite Ausgabe und werden mit "s" skaliert
 const BASE_WIDTH = 1920;
@@ -29,27 +30,11 @@ function boardRect(cfg, s) {
 }
 
 // Helle Fichte braucht dunkle Schrift, alles andere weiße Schrift mit Schatten
-function useDarkText(cfg, images) {
+function useDarkBoardText(cfg, images) {
     return cfg.board.style === 'spruce'
         && cfg.board.opacity > 0.3
         && !images.texture
         && cfg.image.brightness > 65;
-}
-
-function applyTextStyle(ctx, s, darkText) {
-    if (darkText) {
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
-        ctx.shadowBlur = 4 * s;
-        ctx.shadowOffsetX = 2 * s;
-        ctx.shadowOffsetY = 2 * s;
-        ctx.fillStyle = '#1f1209';
-    } else {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-        ctx.shadowBlur = 8 * s;
-        ctx.shadowOffsetX = 3 * s;
-        ctx.shadowOffsetY = 3 * s;
-        ctx.fillStyle = '#FFFFFF';
-    }
 }
 
 function drawColorMarker(ctx, rect, s, color, rowY, rowH) {
@@ -67,34 +52,23 @@ function drawColorMarker(ctx, rect, s, color, rowY, rowH) {
     ctx.restore();
 }
 
-function drawSongText(ctx, rect, s, cfg, song, centerY, darkText) {
-    ctx.save();
-    applyTextStyle(ctx, s, darkText);
-    ctx.textBaseline = 'middle';
-
-    ctx.font = `bold ${Math.round(LAYOUT.numberFontSize * s)}px Arial`;
-    ctx.fillText(song.nr, rect.x + LAYOUT.numberX * s, centerY);
-
-    if (song.str) {
-        ctx.fillStyle = darkText ? '#4e260c' : '#FFE082';
-        ctx.font = `bold ${Math.round(cfg.text.strophenSize * s)}px Arial`;
-        const text = cfg.text.showPrefix ? `Str. ${song.str}` : song.str;
-        ctx.fillText(text, rect.x + LAYOUT.strophenX * s, centerY);
-    }
-    ctx.restore();
-}
-
 function drawSongs(ctx, rect, s, cfg, songs, images) {
     if (songs.length === 0) return;
 
     const paddingY = LAYOUT.paddingY * s;
     const rowH = (rect.h - paddingY * 2) / Math.max(songs.length, MIN_ROWS);
-    const darkText = useDarkText(cfg, images);
+    const darkText = useDarkBoardText(cfg, images);
     let rowY = rect.y + paddingY;
 
     songs.forEach(song => {
         drawColorMarker(ctx, rect, s, song.color, rowY, rowH);
-        drawSongText(ctx, rect, s, cfg, song, rowY + rowH / 2, darkText);
+        drawSongText(ctx, s, cfg, song, {
+            numberX: rect.x + LAYOUT.numberX * s,
+            strophenX: rect.x + LAYOUT.strophenX * s,
+            centerY: rowY + rowH / 2,
+            rowH,
+            numberFontPx: LAYOUT.numberFontSize * s
+        }, darkText);
         if (cfg.board.opacity > 0) drawDivider(ctx, rect, s, cfg, rowY + rowH);
         rowY += rowH;
     });

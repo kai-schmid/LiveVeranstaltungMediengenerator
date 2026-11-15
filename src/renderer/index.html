@@ -13,6 +13,7 @@
           data-setting="store"   -> Wert wird nur gespeichert
           data-display="<id>"    -> Element, in dem der aktuelle Reglerwert angezeigt wird
           data-precise="<Titel>" -> Wert lässt sich zusätzlich über den Eingabedialog setzen
+          data-enables="<id>"    -> Änderung hakt die Checkbox <id> automatisch an
           data-persist-open="<key>" (an <details>) -> Auf-/Zugeklappt-Zustand wird gemerkt
     -->
 
@@ -98,11 +99,11 @@
                     <b>Custom Randfarbe:</b>
                 </label>
                 <div class="color-inline">
-                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render">
+                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render" data-enables="useCustomBorder">
                     <label for="customBorderColor">Außenrand</label>
                 </div>
                 <div class="color-inline">
-                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render">
+                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render" data-enables="useCustomBorder">
                     <label for="customInnerBorderColor">Zierlinie & Leisten</label>
                 </div>
             </div>
@@ -135,6 +136,50 @@
                 <input type="checkbox" id="showStrPrefix" checked data-setting="render">
                 <span>Präfix <b>„Str.“</b> vor den Strophen anzeigen (sonst nur Zahlen/Text)</span>
             </label>
+
+            <!-- Schrift & Einschub-Karten -->
+            <div class="text-style-row section-divider">
+                <div>
+                    <label for="textMode">Text-Darstellung</label>
+                    <select id="textMode" data-setting="render">
+                        <option value="plain" selected>✏️ Direkt auf der Tafel</option>
+                        <option value="cards">🃏 Einschub-Karten (ganze Nummer)</option>
+                        <option value="digitCards">🔢 Einschub-Karten (je Ziffer)</option>
+                    </select>
+                </div>
+                <div class="color-inline">
+                    <input type="color" id="cardColor" value="#f4f1e8" data-setting="render">
+                    <label for="cardColor">Kartenfarbe</label>
+                </div>
+            </div>
+
+            <div class="settings-grid section-divider">
+                <div>
+                    <label>Kartenhöhe (<span id="cardHeightVal" class="val-edit" title="Klicken für genauen Wert">65</span>% der Zeile)</label>
+                    <input type="range" id="cardHeight" min="30" max="100" step="any" value="65"
+                           data-setting="render" data-display="cardHeightVal" data-precise="Kartenhöhe">
+                </div>
+                <div>
+                    <label>Ziffern-Abstand (<span id="cardGapVal">11</span>px)</label>
+                    <input type="range" id="cardGap" min="0" max="40" value="11"
+                           data-setting="render" data-display="cardGapVal">
+                </div>
+            </div>
+
+            <div class="border-custom-row section-divider">
+                <label class="inline-check">
+                    <input type="checkbox" id="useCustomTextColor" data-setting="render">
+                    <b>Eigene Schriftfarbe:</b>
+                </label>
+                <div class="color-inline">
+                    <input type="color" id="numberTextColor" value="#ffffff" data-setting="render" data-enables="useCustomTextColor">
+                    <label for="numberTextColor">Liednummer</label>
+                </div>
+                <div class="color-inline">
+                    <input type="color" id="strophenTextColor" value="#ffe082" data-setting="render" data-enables="useCustomTextColor">
+                    <label for="strophenTextColor">Strophen</label>
+                </div>
+            </div>
         </details>
 
         <!-- Liederliste -->
