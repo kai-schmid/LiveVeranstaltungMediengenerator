@@ -1,7 +1,7 @@
 {
   "name": "atem-liedertafel",
   "productName": "Liedertafel",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Liedertafel-Generator für Blackmagic ATEM Mischer",
   "author": "Kai Schmid",
   "main": "main.js",
