@@ -72,6 +72,22 @@ function restoreCollapsedSections() {
     });
 }
 
+// Alle Einstellungen als { id: wert } (für den Export)
+function exportValues() {
+    const values = {};
+    settingElements().forEach(el => { values[el.id] = readElement(el); });
+    return values;
+}
+
+// Übernimmt Werte aus einem Import; unbekannte Schlüssel werden ignoriert
+function importValues(values) {
+    settingElements().forEach(el => {
+        if (Object.prototype.hasOwnProperty.call(values, el.id)) {
+            storage.set(el.id, String(values[el.id]));
+        }
+    });
+}
+
 function init({ onRender }) {
     onRenderNeeded = onRender;
     restoreSettings();
@@ -83,4 +99,4 @@ function init({ onRender }) {
     });
 }
 
-module.exports = { init, setValue };
+module.exports = { init, setValue, exportValues, importValues, reload: restoreSettings };

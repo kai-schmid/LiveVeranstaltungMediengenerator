@@ -5,6 +5,7 @@ const imageStore = require('./images');
 const fullscreen = require('./fullscreen');
 const valueDialog = require('./value-dialog');
 const actions = require('./actions');
+const backup = require('./backup');
 const { readRenderConfig } = require('./config');
 const { runMigrations } = require('./migrations');
 const { renderTafel } = require('./render/tafel');
@@ -23,6 +24,7 @@ async function start() {
     songs.init({ onSongsChanged: render });
     imageStore.init({ onImagesChanged: render });
     actions.init(canvas);
+    backup.init({ onImported: render });
 
     render();
     await fullscreen.init({ onRender: render });

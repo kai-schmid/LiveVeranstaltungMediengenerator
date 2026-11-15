@@ -275,6 +275,14 @@
                     </select>
                 </div>
             </div>
+
+            <!-- Sicherung: alle Einstellungen, Lieder und beide Bilder als JSON -->
+            <input type="file" id="backupInput" accept=".json,application/json" hidden>
+            <div class="backup-row">
+                <span class="backup-label">Einstellungen, Lieder & Bilder als JSON:</span>
+                <button class="btn-small" id="exportBackupBtn">📤 Exportieren</button>
+                <button class="btn-small" id="importBackupBtn">📥 Importieren</button>
+            </div>
         </details>
 
         <!-- Aktionen -->

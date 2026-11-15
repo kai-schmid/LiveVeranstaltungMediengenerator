@@ -1,5 +1,5 @@
 // Verwaltung der beiden Bilder: äußerer Hintergrund und eigene Holz-Textur für die Tafel.
-// Die Bilder werden als Data-URL im localStorage gehalten, damit sie nach Neustart wieder da sind.
+// Die Bilder werden als Data-URL (Base64) im localStorage gehalten, damit sie nach Neustart wieder da sind.
 const storage = require('./storage');
 
 const IMAGE_SLOTS = [
@@ -9,16 +9,53 @@ const IMAGE_SLOTS = [
 
 // Aktuell geladene Bilder (werden beim Zeichnen direkt gelesen)
 const images = { background: null, texture: null };
+// Zugehörige Data-URLs (für den Export, auch falls localStorage voll ist)
+const dataUrls = { background: null, texture: null };
 
 let onChange = () => {};
 
+const slotByKey = key => IMAGE_SLOTS.find(s => s.key === key);
+
+function isImageDataUrl(value) {
+    return typeof value === 'string' && value.startsWith('data:image/');
+}
+
 function loadFromDataUrl(slot, dataUrl) {
-    const img = new Image();
-    img.onload = () => {
-        images[slot.key] = img;
-        onChange();
-    };
-    img.src = dataUrl;
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            images[slot.key] = img;
+            dataUrls[slot.key] = dataUrl;
+            onChange();
+            resolve();
+        };
+        img.onerror = () => reject(new Error('Bild konnte nicht gelesen werden.'));
+        img.src = dataUrl;
+    });
+}
+
+function clearSlot(slot) {
+    images[slot.key] = null;
+    dataUrls[slot.key] = null;
+    document.getElementById(slot.inputId).value = '';
+    storage.remove(slot.storageKey);
+    onChange();
+}
+
+/**
+ * Setzt ein Bild aus einer Data-URL (oder entfernt es bei null) und speichert es.
+ * @returns false, wenn das Bild nicht dauerhaft gespeichert werden konnte (Speicher voll)
+ */
+async function setImage(key, dataUrl) {
+    const slot = slotByKey(key);
+    if (dataUrl === null) {
+        clearSlot(slot);
+        return true;
+    }
+    if (!isImageDataUrl(dataUrl)) throw new Error('Ungültige Bilddaten.');
+    const stored = storage.set(slot.storageKey, dataUrl);
+    await loadFromDataUrl(slot, dataUrl);
+    return stored;
 }
 
 function readFileAsDataUrl(file) {
@@ -38,20 +75,13 @@ function setupSlot(slot) {
     input.addEventListener('change', async () => {
         const file = input.files[0];
         if (!file) return;
-        const dataUrl = await readFileAsDataUrl(file);
-        storage.set(slot.storageKey, dataUrl);
-        loadFromDataUrl(slot, dataUrl);
+        await setImage(slot.key, await readFileAsDataUrl(file));
     });
 
-    document.getElementById(slot.clearBtnId).addEventListener('click', () => {
-        images[slot.key] = null;
-        input.value = '';
-        storage.remove(slot.storageKey);
-        onChange();
-    });
+    document.getElementById(slot.clearBtnId).addEventListener('click', () => clearSlot(slot));
 
     const saved = storage.get(slot.storageKey);
-    if (saved) loadFromDataUrl(slot, saved);
+    if (saved) loadFromDataUrl(slot, saved).catch(() => {});
 }
 
 function init({ onImagesChanged }) {
@@ -59,4 +89,4 @@ function init({ onImagesChanged }) {
     IMAGE_SLOTS.forEach(setupSlot);
 }
 
-module.exports = { init, images };
+module.exports = { init, images, dataUrls, setImage, isImageDataUrl };

@@ -132,4 +132,18 @@ function init({ onSongsChanged }) {
     document.getElementById('clearSongsBtn').addEventListener('click', clearAll);
 }
 
-module.exports = { init, getVisibleSongs };
+function exportSongs() {
+    return [...listEl.querySelectorAll('.song-row')].map(readRow);
+}
+
+function importSongs(list) {
+    const clean = list.map(s => ({
+        nr: String(s.nr ?? ''),
+        color: SONG_COLORS.some(c => c.hex === s.color) ? s.color : 'transparent',
+        str: String(s.str ?? '')
+    }));
+    setRows(clean.length > 0 ? clean : [EMPTY_SONG]);
+    save();
+}
+
+module.exports = { init, getVisibleSongs, exportSongs, importSongs };

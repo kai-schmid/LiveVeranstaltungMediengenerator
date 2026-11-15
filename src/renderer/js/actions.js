@@ -1,12 +1,7 @@
 // Ausgabe-Aktionen: Bild als PNG speichern und in den ATEM Media Player laden.
 const { ipcRenderer } = require('electron');
 const { readAtemConfig } = require('./config');
-
-function showStatus(type, text) {
-    const status = document.getElementById('status');
-    status.className = type;   // 'success' | 'info' | 'error'
-    status.textContent = text;
-}
+const { showStatus } = require('./status');
 
 function saveAsPng(canvas) {
     const link = document.createElement('a');
