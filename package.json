@@ -4,6 +4,12 @@
   "version": "0.1.0",
   "description": "Liedertafel-Generator für Blackmagic ATEM Mischer",
   "author": "Kai Schmid",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kai-schmid/LiveVeranstaltungMediengenerator.git"
+  },
+  "homepage": "https://github.com/kai-schmid/LiveVeranstaltungMediengenerator",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
