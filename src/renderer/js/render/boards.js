@@ -1,11 +1,14 @@
-// Zeichnet die Tafel selbst (Hintergrund + Rahmen) und die Einschubleisten zwischen den Zeilen.
-const { drawImageFill } = require('./image-fill');
+// Zeichnet die Tafel selbst (Oberfläche + Rahmen) und die Einschubleisten zwischen den Zeilen.
+const { drawImageFill, applyTint } = require('./image-fill');
+const { shade, averageColor } = require('./color');
 
 // ---------- Rahmen ----------
 
+const FRAME_WIDTH = 20;
+
 function drawFrame(ctx, rect, s, colors) {
     const { x, y, w, h } = rect;
-    const frameWidth = 20 * s;
+    const frameWidth = FRAME_WIDTH * s;
 
     ctx.lineWidth = frameWidth;
     ctx.strokeStyle = colors.outer;
@@ -22,11 +25,10 @@ function applyDropShadow(ctx, s, alpha) {
     ctx.shadowOffsetY = 10 * s;
 }
 
-// ---------- Prozedurale Holzmaserung (ohne eigene Textur) ----------
+// ---------- Prozedurale Holzmaserung (ohne eigenes Foto) ----------
 
-function drawSpruceGrain(ctx, rect, s, cfg, hasBackground) {
+function drawSpruceGrain(ctx, rect, s, texture) {
     const { x, y, w, h } = rect;
-    const { image } = cfg;
 
     const gradient = ctx.createLinearGradient(x, y, x, y + h);
     gradient.addColorStop(0, '#e8cfa6');
@@ -37,7 +39,7 @@ function drawSpruceGrain(ctx, rect, s, cfg, hasBackground) {
     ctx.shadowColor = 'transparent';
 
     // Maserungslinien
-    const step = Math.max(1.5, 2.5 * s * (cfg.textureScale * 2));
+    const step = Math.max(1.5, 2.5 * s * (texture.scale * 2));
     for (let i = 0; i < h; i += step) {
         const wave = Math.sin(i * 0.04) * 0.025;
         ctx.fillStyle = (Math.floor(i / step) % 5 === 0)
@@ -74,16 +76,9 @@ function drawSpruceGrain(ctx, rect, s, cfg, hasBackground) {
         ctx.ellipse(k.kx, k.ky, k.rx * 0.45, k.ry * 0.45, 0.08, 0, Math.PI * 2);
         ctx.fill();
     });
-
-    // Tönung wirkt hier nur, wenn kein äußeres Hintergrundbild gesetzt ist
-    if (image.tintAlpha > 0 && !hasBackground) {
-        ctx.fillStyle = image.tintColor;
-        ctx.globalAlpha = cfg.board.opacity * image.tintAlpha * 0.5;
-        ctx.fillRect(x, y, w, h);
-    }
 }
 
-function drawDarkWoodGrain(ctx, rect, s, cfg) {
+function drawDarkWoodGrain(ctx, rect, s, texture) {
     const { x, y, w, h } = rect;
 
     const gradient = ctx.createLinearGradient(x, y, x + w, y + h);
@@ -94,7 +89,7 @@ function drawDarkWoodGrain(ctx, rect, s, cfg) {
     ctx.fillRect(x, y, w, h);
     ctx.shadowColor = 'transparent';
 
-    const step = Math.max(2, 3 * s * (cfg.textureScale * 2));
+    const step = Math.max(2, 3 * s * (texture.scale * 2));
     for (let i = 0; i < h; i += step) {
         const wave = Math.sin(i * 0.05) * 0.03;
         ctx.fillStyle = (Math.floor(i / step) % 6 === 0)
@@ -104,58 +99,41 @@ function drawDarkWoodGrain(ctx, rect, s, cfg) {
     }
 }
 
-// ---------- Holztafeln (Foto-Textur oder prozedurale Maserung) ----------
+// ---------- Tafel-Oberflächen ----------
 
-function drawWoodBoard(ctx, rect, s, cfg, images, style) {
+// Holz: eigenes Foto oder prozedurale Maserung, jeweils mit Helligkeit & Tönung der Holz-Ebene
+function drawWoodSurface(ctx, rect, s, cfg, images, style) {
     const { x, y, w, h } = rect;
-
-    ctx.save();
-    ctx.globalAlpha = cfg.board.opacity;
-    applyDropShadow(ctx, s, style.shadowAlpha);
+    const texture = cfg.texture;
 
     if (images.texture) {
         ctx.fillStyle = style.baseColor;
         ctx.fillRect(x, y, w, h);
         ctx.shadowColor = 'transparent';
-        drawImageFill(ctx, images.texture, rect, cfg.textureScale, cfg.image);
-    } else {
-        ctx.save();
-        // Ohne Hintergrundbild steuert der Helligkeitsregler die Tafel
-        if (!images.background) ctx.filter = `brightness(${cfg.image.brightness}%)`;
-        style.drawGrain(ctx, rect, s, cfg, Boolean(images.background));
-        ctx.restore();
+        drawImageFill(ctx, images.texture, rect, texture);
+        return;
     }
-
-    drawFrame(ctx, rect, s, cfg.board.customBorder || style.frame);
-    ctx.restore();
-}
-
-function drawModernBoard(ctx, rect, s, cfg) {
-    const { x, y, w, h } = rect;
 
     ctx.save();
-    ctx.globalAlpha = cfg.board.opacity;
-    ctx.fillStyle = 'rgb(20, 20, 20)';
-    ctx.fillRect(x, y, w, h);
-
-    if (cfg.board.customBorder) {
-        drawFrame(ctx, rect, s, cfg.board.customBorder);
-    } else {
-        ctx.strokeStyle = 'rgb(85, 85, 85)';
-        ctx.lineWidth = 4 * s;
-        ctx.strokeRect(x, y, w, h);
-    }
+    ctx.filter = `brightness(${texture.brightness}%)`;
+    style.drawGrain(ctx, rect, s, texture);
     ctx.restore();
+    applyTint(ctx, rect, texture);
+}
+
+function drawModernSurface(ctx, rect) {
+    ctx.fillStyle = 'rgb(20, 20, 20)';
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 }
 
 // ---------- Stil-Definitionen ----------
 
 const BOARD_STYLES = {
     spruce: {
-        draw: drawWoodBoard,
+        drawSurface: drawWoodSurface,
+        drawGrain: drawSpruceGrain,
         baseColor: '#e8cfa6',
         shadowAlpha: 0.65,
-        drawGrain: drawSpruceGrain,
         frame: { outer: '#c49b66', inner: '#7a5229' },
         // Einschubleiste: dunkle Kante + helle Lichtkante (offset/height in Basis-Pixeln)
         dividers: [
@@ -164,10 +142,10 @@ const BOARD_STYLES = {
         ]
     },
     wood: {
-        draw: drawWoodBoard,
+        drawSurface: drawWoodSurface,
+        drawGrain: drawDarkWoodGrain,
         baseColor: '#3b2210',
         shadowAlpha: 0.7,
-        drawGrain: drawDarkWoodGrain,
         frame: { outer: '#5c381c', inner: '#8d6e46' },
         dividers: [
             { color: '#241205', offset: -6, height: 8 },
@@ -175,8 +153,10 @@ const BOARD_STYLES = {
         ]
     },
     dark: {
-        draw: drawModernBoard,
-        dividers: null   // dünne helle Linie statt Leiste
+        drawSurface: drawModernSurface,
+        shadowAlpha: 0,
+        frame: null,      // nur dünne graue Kontur
+        dividers: null    // dünne helle Linie statt Leiste
     }
 };
 
@@ -184,29 +164,82 @@ function getBoardStyle(name) {
     return BOARD_STYLES[name] || BOARD_STYLES.dark;
 }
 
+// ---------- Farben für Rahmen & Leisten ----------
+
+function trimFromColors(outer, inner) {
+    return {
+        frame: { outer, inner },
+        dividers: [
+            { color: inner, offset: -5, height: 6 },
+            { color: outer, offset: 1, height: 3 }
+        ]
+    };
+}
+
+// Leitet Rahmen & Leisten aus der Durchschnittsfarbe der fertig getönten Tafel ab
+function trimFromWoodColor(ctx, rect, s) {
+    const inset = (FRAME_WIDTH + 5) * s;
+    const wood = averageColor(ctx.canvas, {
+        x: rect.x + inset, y: rect.y + inset, w: rect.w - 2 * inset, h: rect.h - 2 * inset
+    });
+    return {
+        wood,
+        frame: { outer: shade(wood, -0.3), inner: shade(wood, -0.6) },
+        dividers: [
+            { color: shade(wood, -0.45), offset: -5, height: 6 },
+            { color: shade(wood, 0.35), offset: 1, height: 3 }
+        ]
+    };
+}
+
+function resolveTrim(ctx, rect, s, cfg, style) {
+    switch (cfg.board.borderMode) {
+        case 'custom':
+            return trimFromColors(cfg.board.customBorder.outer, cfg.board.customBorder.inner);
+        case 'wood':
+            return trimFromWoodColor(ctx, rect, s);
+        default:
+            return { frame: style.frame, dividers: style.dividers };
+    }
+}
+
+// ---------- Öffentliche Funktionen ----------
+
+/**
+ * Zeichnet Oberfläche und Rahmen der Tafel.
+ * @returns die verwendeten Farben für Rahmen & Leisten ({ frame, dividers })
+ */
 function drawBoard(ctx, rect, s, cfg, images) {
     const style = getBoardStyle(cfg.board.style);
-    style.draw(ctx, rect, s, cfg, images, style);
+
+    ctx.save();
+    ctx.globalAlpha = cfg.board.opacity;
+    if (style.shadowAlpha) applyDropShadow(ctx, s, style.shadowAlpha);
+
+    style.drawSurface(ctx, rect, s, cfg, images, style);
+    const trim = resolveTrim(ctx, rect, s, cfg, style);
+
+    if (trim.frame) {
+        drawFrame(ctx, rect, s, trim.frame);
+    } else {
+        ctx.strokeStyle = 'rgb(85, 85, 85)';
+        ctx.lineWidth = 4 * s;
+        ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    }
+    ctx.restore();
+    return trim;
 }
 
 // Einschubleiste unterhalb einer Zeile (bei lineY)
-function drawDivider(ctx, rect, s, cfg, lineY) {
+function drawDivider(ctx, rect, s, cfg, lineY, trim) {
     const lineX = rect.x + 35 * s;
     const lineW = rect.w - 70 * s;
-    const custom = cfg.board.customBorder;
-
-    const dividers = custom
-        ? [
-            { color: custom.inner, offset: -5, height: 6 },
-            { color: custom.outer, offset: 1, height: 3 }
-        ]
-        : getBoardStyle(cfg.board.style).dividers;
 
     ctx.save();
     ctx.globalAlpha = cfg.board.opacity;
 
-    if (dividers) {
-        dividers.forEach(d => {
+    if (trim.dividers) {
+        trim.dividers.forEach(d => {
             ctx.fillStyle = d.color;
             ctx.fillRect(lineX, lineY + d.offset * s, lineW, d.height * s);
         });

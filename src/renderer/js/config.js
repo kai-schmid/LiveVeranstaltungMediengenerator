@@ -7,30 +7,40 @@ const number = id => parseFloat(value(id));
 const percent = id => number(id) / 100;
 const checked = id => byId(id).checked;
 
+// Einstellungen einer Bild-Ebene ('bg' = Hintergrund, 'tex' = Holz/Tafel)
+function readImageLayer(prefix) {
+    return {
+        mode: value(`${prefix}Mode`),                // 'tile' | 'cover'
+        scale: percent(`${prefix}Scale`),            // Faktor, 0.5 = 50 %
+        brightness: number(`${prefix}Brightness`),   // in %
+        tintColor: value(`${prefix}TintColor`),
+        tintAlpha: percent(`${prefix}TintOpacity`),  // 0..1
+        seamless: checked('seamlessTile')
+    };
+}
+
 function readRenderConfig() {
     const [width, height] = value('resolution').split('x').map(Number);
 
     return {
         width,
         height,
-        image: {
-            mode: value('bgMode'),                 // 'tile' | 'cover'
-            brightness: number('bgBrightness'),    // in %
-            seamless: checked('seamlessTile'),
-            tintColor: value('bgTintColor'),
-            tintAlpha: percent('bgTintOpacity')    // 0..1
+        background: readImageLayer('bg'),
+        texture: readImageLayer('tex'),
+        // Wirkt zusätzlich auf Hintergrund, Tafel, Rahmen und Leisten (nicht auf Text)
+        master: {
+            brightness: number('masterBrightness'),
+            tintColor: value('masterTintColor'),
+            tintAlpha: percent('masterTintOpacity')
         },
-        backgroundScale: percent('bgScale'),
-        textureScale: percent('texScale'),
         board: {
             style: value('boardStyle'),            // 'spruce' | 'wood' | 'dark'
             opacity: percent('boxOpacity'),
             scale: percent('boardScale'),
             posX: percent('boardPosX'),
             posY: percent('boardPosY'),
-            customBorder: checked('useCustomBorder')
-                ? { outer: value('customBorderColor'), inner: value('customInnerBorderColor') }
-                : null
+            borderMode: value('borderMode'),       // 'style' | 'custom' | 'wood'
+            customBorder: { outer: value('customBorderColor'), inner: value('customInnerBorderColor') }
         },
         text: {
             strophenSize: number('strophenSize'),

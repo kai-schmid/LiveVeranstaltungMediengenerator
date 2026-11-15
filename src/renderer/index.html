@@ -14,6 +14,7 @@
           data-display="<id>"    -> Element, in dem der aktuelle Reglerwert angezeigt wird
           data-precise="<Titel>" -> Wert lässt sich zusätzlich über den Eingabedialog setzen
           data-enables="<id>"    -> Änderung hakt die Checkbox <id> automatisch an
+          data-enables="<id>=<wert>" -> Änderung setzt die Auswahl <id> auf <wert>
           data-persist-open="<key>" (an <details>) -> Auf-/Zugeklappt-Zustand wird gemerkt
     -->
 
@@ -36,36 +37,76 @@
                 <button class="btn-clear-bg" id="texClearBtn" title="Holz-Textur entfernen">✕</button>
             </div>
 
-            <!-- Bild-Modus, Skalierung, Helligkeit & Tönung -->
-            <div class="sub-grid-5 section-divider">
+            <!-- Bild-Ebenen: Hintergrund, Holz-Textur und Master (wirkt auf beide + Rahmen & Leisten) -->
+            <div class="layer-grid section-divider">
+                <div></div>
+                <label>Bild-Modus</label>
+                <label>Skalierung</label>
+                <label>Helligkeit</label>
+                <label>Tönung</label>
+
+                <span class="layer-name">🖼️ Hintergrund</span>
+                <select id="bgMode" data-setting="render">
+                    <option value="tile" selected>Kacheln</option>
+                    <option value="cover">Vollbild</option>
+                </select>
                 <div>
-                    <label for="bgMode">Bild-Modus</label>
-                    <select id="bgMode" data-setting="render">
-                        <option value="tile" selected>🧱 Kacheln</option>
-                        <option value="cover">🖼️ Vollbild</option>
-                    </select>
-                </div>
-                <div>
-                    <label>BG-Skal. (<span id="bgScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%)</label>
+                    <span class="layer-value"><span id="bgScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%</span>
                     <input type="range" id="bgScale" min="10" max="200" step="any" value="50"
                            data-setting="render" data-display="bgScaleVal" data-precise="Hintergrund-Skalierung">
                 </div>
                 <div>
-                    <label>Textur-Skal. (<span id="texScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%)</label>
+                    <span class="layer-value"><span id="bgBrightVal" class="val-edit" title="Klicken für genauen Wert">100</span>%</span>
+                    <input type="range" id="bgBrightness" step="any" min="20" max="180" value="100"
+                           data-setting="render" data-display="bgBrightVal" data-precise="Hintergrund-Helligkeit">
+                </div>
+                <div>
+                    <span class="layer-value"><span id="bgTintVal" class="val-edit" title="Klicken für genauen Wert">0</span>%</span>
+                    <div class="color-inline">
+                        <input type="color" id="bgTintColor" value="#d7a15c" data-setting="render">
+                        <input type="range" id="bgTintOpacity" step="any" min="0" max="100" value="0"
+                               data-setting="render" data-display="bgTintVal" data-precise="Hintergrund-Tönung">
+                    </div>
+                </div>
+
+                <span class="layer-name">🪵 Holz / Tafel</span>
+                <select id="texMode" data-setting="render">
+                    <option value="tile" selected>Kacheln</option>
+                    <option value="cover">Vollbild</option>
+                </select>
+                <div>
+                    <span class="layer-value"><span id="texScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%</span>
                     <input type="range" id="texScale" min="10" max="200" step="any" value="50"
                            data-setting="render" data-display="texScaleVal" data-precise="Textur-Skalierung">
                 </div>
                 <div>
-                    <label>Helligkeit (<span id="bgBrightVal">100</span>%)</label>
-                    <input type="range" id="bgBrightness" min="20" max="180" value="100"
-                           data-setting="render" data-display="bgBrightVal">
+                    <span class="layer-value"><span id="texBrightVal" class="val-edit" title="Klicken für genauen Wert">100</span>%</span>
+                    <input type="range" id="texBrightness" step="any" min="20" max="180" value="100"
+                           data-setting="render" data-display="texBrightVal" data-precise="Holz-Helligkeit">
                 </div>
                 <div>
-                    <label>Tönung (<span id="bgTintVal">0</span>%)</label>
+                    <span class="layer-value"><span id="texTintVal" class="val-edit" title="Klicken für genauen Wert">0</span>%</span>
                     <div class="color-inline">
-                        <input type="color" id="bgTintColor" value="#d7a15c" data-setting="render">
-                        <input type="range" id="bgTintOpacity" min="0" max="100" value="0"
-                               data-setting="render" data-display="bgTintVal">
+                        <input type="color" id="texTintColor" value="#d7a15c" data-setting="render">
+                        <input type="range" id="texTintOpacity" step="any" min="0" max="100" value="0"
+                               data-setting="render" data-display="texTintVal" data-precise="Holz-Tönung">
+                    </div>
+                </div>
+
+                <span class="layer-name master">🎚️ Master</span>
+                <span class="layer-hint">wirkt auf alles<br>außer Text</span>
+                <div></div>
+                <div>
+                    <span class="layer-value"><span id="masterBrightVal" class="val-edit" title="Klicken für genauen Wert">100</span>%</span>
+                    <input type="range" id="masterBrightness" step="any" min="20" max="180" value="100"
+                           data-setting="render" data-display="masterBrightVal" data-precise="Master-Helligkeit">
+                </div>
+                <div>
+                    <span class="layer-value"><span id="masterTintVal" class="val-edit" title="Klicken für genauen Wert">0</span>%</span>
+                    <div class="color-inline">
+                        <input type="color" id="masterTintColor" value="#d7a15c" data-setting="render">
+                        <input type="range" id="masterTintOpacity" step="any" min="0" max="100" value="0"
+                               data-setting="render" data-display="masterTintVal" data-precise="Master-Tönung">
                     </div>
                 </div>
             </div>
@@ -92,18 +133,22 @@
                 </div>
             </div>
 
-            <!-- Eigene Randfarbe & Einschubleisten-Farbe -->
+            <!-- Farbe für Rahmen & Einschubleisten -->
             <div class="border-custom-row section-divider">
-                <label class="inline-check">
-                    <input type="checkbox" id="useCustomBorder" data-setting="render">
-                    <b>Custom Randfarbe:</b>
-                </label>
+                <div>
+                    <label for="borderMode">Rand & Leisten</label>
+                    <select id="borderMode" data-setting="render">
+                        <option value="style" selected>Stil-Standard</option>
+                        <option value="custom">Eigene Farben</option>
+                        <option value="wood">Aus Holzfarbe (auto)</option>
+                    </select>
+                </div>
                 <div class="color-inline">
-                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render" data-enables="useCustomBorder">
+                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render" data-enables="borderMode=custom">
                     <label for="customBorderColor">Außenrand</label>
                 </div>
                 <div class="color-inline">
-                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render" data-enables="useCustomBorder">
+                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render" data-enables="borderMode=custom">
                     <label for="customInnerBorderColor">Zierlinie & Leisten</label>
                 </div>
             </div>

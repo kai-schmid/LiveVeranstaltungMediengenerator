@@ -6,6 +6,7 @@ const fullscreen = require('./fullscreen');
 const valueDialog = require('./value-dialog');
 const actions = require('./actions');
 const { readRenderConfig } = require('./config');
+const { runMigrations } = require('./migrations');
 const { renderTafel } = require('./render/tafel');
 
 const canvas = document.getElementById('tafelCanvas');
@@ -16,6 +17,7 @@ function render() {
 }
 
 async function start() {
+    runMigrations();
     settings.init({ onRender: render });
     valueDialog.init({ onApply: settings.setValue });
     songs.init({ onSongsChanged: render });

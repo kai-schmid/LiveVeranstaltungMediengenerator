@@ -1,5 +1,5 @@
 // Füllt einen rechteckigen Bereich mit einem Bild – gekachelt oder als Vollbild –
-// inklusive Helligkeit und optionaler Farbtönung.
+// inklusive Helligkeit und optionaler Farbtönung der jeweiligen Ebene.
 const { getEdgeBalancedTile } = require('./seamless-tile');
 
 const MIN_TILE_SIZE = 16;
@@ -43,16 +43,19 @@ function drawCover(ctx, img, area, scale) {
     ctx.drawImage(img, area.x + (area.w - drawW) / 2, area.y + (area.h - drawH) / 2, drawW, drawH);
 }
 
-function drawTint(ctx, area, image) {
+// Farbtönung eines Bereichs: multiplizieren + leicht überlagern
+function applyTint(ctx, area, layer) {
+    if (layer.tintAlpha <= 0) return;
     ctx.save();
-    ctx.filter = `brightness(${image.brightness}%)`;
-    ctx.fillStyle = image.tintColor;
+    ctx.shadowColor = 'transparent';
+    ctx.filter = `brightness(${layer.brightness}%)`;
+    ctx.fillStyle = layer.tintColor;
 
-    ctx.globalAlpha = image.tintAlpha;
+    ctx.globalAlpha = layer.tintAlpha;
     ctx.globalCompositeOperation = 'multiply';
     ctx.fillRect(area.x, area.y, area.w, area.h);
 
-    ctx.globalAlpha = image.tintAlpha * 0.45;
+    ctx.globalAlpha = layer.tintAlpha * 0.45;
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillRect(area.x, area.y, area.w, area.h);
     ctx.restore();
@@ -60,26 +63,24 @@ function drawTint(ctx, area, image) {
 
 /**
  * @param area  {x, y, w, h}
- * @param scale Skalierung als Faktor (0.5 = 50 %)
- * @param image Bild-Optionen aus readRenderConfig().image
+ * @param layer Ebenen-Einstellungen aus readRenderConfig().background bzw. .texture
  */
-function drawImageFill(ctx, img, area, scale, image) {
+function drawImageFill(ctx, img, area, layer) {
     ctx.save();
     ctx.beginPath();
     ctx.rect(area.x, area.y, area.w, area.h);
     ctx.clip();
 
-    ctx.filter = `brightness(${image.brightness}%)`;
-    if (image.mode === 'tile') {
-        drawTiled(ctx, img, area, scale, image.seamless);
+    ctx.filter = `brightness(${layer.brightness}%)`;
+    if (layer.mode === 'tile') {
+        drawTiled(ctx, img, area, layer.scale, layer.seamless);
     } else {
-        drawCover(ctx, img, area, scale);
+        drawCover(ctx, img, area, layer.scale);
     }
     ctx.filter = 'none';
 
-    if (image.tintAlpha > 0) drawTint(ctx, area, image);
-
+    applyTint(ctx, area, layer);
     ctx.restore();
 }
 
-module.exports = { drawImageFill };
+module.exports = { drawImageFill, applyTint };

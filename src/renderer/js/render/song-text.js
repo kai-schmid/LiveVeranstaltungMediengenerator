@@ -1,5 +1,6 @@
 // Zeichnet Liednummer und Strophen einer Zeile – direkt auf der Tafel
 // oder auf Einschub-Karten (ganze Nummer bzw. eine Karte je Ziffer).
+const { luminance } = require('./color');
 
 const CARD = {
     heightFactor: 1.3,     // Schrift wird verkleinert, wenn sie höher als Karte / heightFactor wäre
@@ -17,12 +18,6 @@ const PLAIN_COLORS = {
     light: { number: '#FFFFFF', strophen: '#FFE082' },
     dark: { number: '#1f1209', strophen: '#4e260c' }   // für helle Fichte
 };
-
-// Wahrgenommene Helligkeit 0..255 einer #rrggbb-Farbe
-function luminance(hex) {
-    const n = parseInt(hex.slice(1), 16);
-    return 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
-}
 
 function resolveColors(cfg, darkBoardText) {
     if (cfg.text.customColors) return cfg.text.customColors;

@@ -54,7 +54,7 @@ details.collapsible[open] summary {
     padding-bottom: 6px;
 }
 details.design-settings {
-    max-height: 60vh;
+    max-height: 52vh;
     overflow-y: auto;
 }
 details.design-settings summary { font-size: 15px; color: #4fc3f7; }
@@ -78,11 +78,32 @@ details.advanced-settings[open] summary { margin-bottom: 10px; }
     grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 8px;
 }
-.sub-grid-5 {
+/* Ebenen-Raster: Zeilen = Hintergrund / Holz / Master, Spalten = Modus, Skalierung, Helligkeit, Tönung */
+.layer-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr;
-    gap: 6px;
-    align-items: center;
+    grid-template-columns: 78px 1fr 1fr 1fr 1.2fr;
+    gap: 6px 8px;
+    align-items: end;
+}
+.layer-grid > label { margin-bottom: 0; }
+.layer-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: #ddd;
+    align-self: center;
+}
+.layer-name.master { color: #4fc3f7; }
+.layer-hint {
+    font-size: 10px;
+    color: #777;
+    align-self: center;
+    line-height: 1.2;
+}
+.layer-value {
+    display: block;
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 2px;
 }
 .border-custom-row {
     display: grid;

@@ -30,8 +30,20 @@ function save() {
     settingElements().forEach(el => storage.set(el.id, readElement(el)));
 }
 
+// data-enables="id" hakt eine Checkbox an, data-enables="id=wert" setzt eine Auswahl
+function applyEnables(el) {
+    if (!el.dataset.enables) return;
+    const [id, value] = el.dataset.enables.split('=');
+    const target = document.getElementById(id);
+    if (value === undefined) {
+        target.checked = true;
+    } else {
+        target.value = value;
+    }
+}
+
 function handleChange(el) {
-    if (el.dataset.enables) document.getElementById(el.dataset.enables).checked = true;
+    applyEnables(el);
     updateDisplay(el);
     save();
     if (el.dataset.setting === 'render') onRenderNeeded();

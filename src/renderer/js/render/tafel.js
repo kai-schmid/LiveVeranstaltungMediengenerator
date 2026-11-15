@@ -2,6 +2,7 @@
 const { drawImageFill } = require('./image-fill');
 const { drawBoard, drawDivider } = require('./boards');
 const { drawSongText } = require('./song-text');
+const { applyMaster } = require('./master');
 
 // Alle Maße beziehen sich auf eine 1920 px breite Ausgabe und werden mit "s" skaliert
 const BASE_WIDTH = 1920;
@@ -34,7 +35,7 @@ function useDarkBoardText(cfg, images) {
     return cfg.board.style === 'spruce'
         && cfg.board.opacity > 0.3
         && !images.texture
-        && cfg.image.brightness > 65;
+        && cfg.texture.brightness * cfg.master.brightness / 100 > 65;
 }
 
 function drawColorMarker(ctx, rect, s, color, rowY, rowH) {
@@ -52,25 +53,26 @@ function drawColorMarker(ctx, rect, s, color, rowY, rowH) {
     ctx.restore();
 }
 
-function drawSongs(ctx, rect, s, cfg, songs, images) {
-    if (songs.length === 0) return;
-
+// Zeilen-Raster: eine Zeile je Lied, mindestens MIN_ROWS
+function songRows(rect, s, count) {
     const paddingY = LAYOUT.paddingY * s;
-    const rowH = (rect.h - paddingY * 2) / Math.max(songs.length, MIN_ROWS);
-    const darkText = useDarkBoardText(cfg, images);
-    let rowY = rect.y + paddingY;
+    const rowH = (rect.h - paddingY * 2) / Math.max(count, MIN_ROWS);
+    return Array.from({ length: count }, (_, i) => ({ y: rect.y + paddingY + i * rowH, h: rowH }));
+}
 
-    songs.forEach(song => {
-        drawColorMarker(ctx, rect, s, song.color, rowY, rowH);
+function drawSongs(ctx, rect, s, cfg, songs, rows, images) {
+    const darkText = useDarkBoardText(cfg, images);
+
+    songs.forEach((song, i) => {
+        const row = rows[i];
+        drawColorMarker(ctx, rect, s, song.color, row.y, row.h);
         drawSongText(ctx, s, cfg, song, {
             numberX: rect.x + LAYOUT.numberX * s,
             strophenX: rect.x + LAYOUT.strophenX * s,
-            centerY: rowY + rowH / 2,
-            rowH,
+            centerY: row.y + row.h / 2,
+            rowH: row.h,
             numberFontPx: LAYOUT.numberFontSize * s
         }, darkText);
-        if (cfg.board.opacity > 0) drawDivider(ctx, rect, s, cfg, rowY + rowH);
-        rowY += rowH;
     });
 }
 
@@ -86,16 +88,27 @@ function renderTafel(canvas, cfg, songs, images) {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, cfg.width, cfg.height);
 
+    // 1. Hintergrund
     if (images.background) {
         const fullArea = { x: 0, y: 0, w: cfg.width, h: cfg.height };
-        drawImageFill(ctx, images.background, fullArea, cfg.backgroundScale, cfg.image);
+        drawImageFill(ctx, images.background, fullArea, cfg.background);
     }
 
     const s = (cfg.width / BASE_WIDTH) * cfg.board.scale;
     const rect = boardRect(cfg, s);
+    const rows = songRows(rect, s, songs.length);
 
-    if (cfg.board.opacity > 0) drawBoard(ctx, rect, s, cfg, images);
-    drawSongs(ctx, rect, s, cfg, songs, images);
+    // 2. Tafel, Rahmen und Einschubleisten
+    if (cfg.board.opacity > 0) {
+        const trim = drawBoard(ctx, rect, s, cfg, images);
+        rows.forEach(row => drawDivider(ctx, rect, s, cfg, row.y + row.h, trim));
+    }
+
+    // 3. Master-Helligkeit/-Tönung über alles bisher Gezeichnete
+    applyMaster(canvas, cfg.master);
+
+    // 4. Farbmarker, Nummern & Strophen (vom Master unberührt)
+    drawSongs(ctx, rect, s, cfg, songs, rows, images);
 }
 
 module.exports = { renderTafel };
