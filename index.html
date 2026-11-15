@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>ATEM Liedertafel Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 500px 1fr;
+            gap: 25px;
+            height: calc(100vh - 40px);
+            box-sizing: border-box;
+        }
+        .panel {
+            background: #2a2a2a;
+            padding: 18px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        h2 { margin-top: 0; margin-bottom: 8px; font-size: 15px; color: #4fc3f7; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .slider-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+            font-size: 12px;
+            color: #ddd;
+            cursor: pointer;
+        }
+        .checkbox-row input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        details.advanced-settings {
+            background: #222;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+        }
+        details.advanced-settings summary {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            color: #90caf9;
+            user-select: none;
+            outline: none;
+        }
+        details.advanced-settings[open] summary {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+        .bg-controls {
+            background: #222;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #3a3a3a;
+        }
+        .bg-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        label { font-size: 11px; color: #aaa; display: block; margin-bottom: 3px; }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 6px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="range"] { width: 100%; cursor: pointer; margin: 0; }
+        .song-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding-right: 5px;
+        }
+        .song-row {
+            display: grid;
+            grid-template-columns: 85px 115px 1fr 35px;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+            background: #333;
+            padding: 7px;
+            border-radius: 6px;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            font-size: 12px;
+        }
+        .btn-file { background: #455a64; color: white; flex: 1; }
+        .btn-file:hover { background: #37474f; }
+        .btn-clear-bg { background: #616161; color: white; }
+        .btn-clear-bg:hover { background: #424242; }
+        .btn-add { background: #388e3c; color: white; margin-bottom: 10px; font-size: 13px; padding: 9px; }
+        .btn-add:hover { background: #2e7d32; }
+        .btn-del { background: #d32f2f; color: white; padding: 6px; }
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1.6fr;
+            gap: 10px;
+        }
+        .btn-save { background: #546e7a; color: white; font-size: 14px; padding: 12px; }
+        .btn-save:hover { background: #455a64; }
+        .btn-upload { background: #0288d1; color: white; font-size: 14px; padding: 12px; }
+        .btn-upload:hover { background: #0277bd; }
+        .btn-upload:disabled { background: #555; cursor: wait; }
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #141414;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        canvas {
+            width: 100%;
+            max-width: 680px;
+            aspect-ratio: 16 / 9;
+            background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
+                              linear-gradient(-45deg, #222 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #222 75%), 
+                              linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+        }
+        #status {
+            margin-top: 8px;
+            font-size: 13px;
+            text-align: center;
+            min-height: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Linkes Bedienfeld -->
+    <div class="panel">
+        
+        <h2>Hintergrund & Tafel-Design</h2>
+        <div class="bg-controls">
+            <!-- Äußeres Hintergrundbild (Vollbild 16:9) -->
+            <input type="file" id="bgInput" accept="image/*" style="display: none;" onchange="loadBackgroundFile(event)">
+            <div class="bg-row">
+                <button class="btn-file" onclick="document.getElementById('bgInput').click()">🖼️ Äußeres Hintergrundbild...</button>
+                <button class="btn-clear-bg" onclick="clearBackground()" title="Hintergrundbild entfernen">✕</button>
+            </div>
+
+            <!-- Eigene Holz-Textur für die Tafel -->
+            <input type="file" id="texInput" accept="image/*" style="display: none;" onchange="loadTextureFile(event)">
+            <div class="bg-row" style="margin-bottom: 10px;">
+                <button class="btn-file" style="background: #6d4c41;" onclick="document.getElementById('texInput').click()">🪵 Eigene Holz-Textur (Foto) für Tafel...</button>
+                <button class="btn-clear-bg" onclick="clearTexture()" title="Holz-Textur entfernen">✕</button>
+            </div>
+
+            <div class="settings-grid">
+                <div>
+                    <label>Tafel-Stil</label>
+                    <select id="boardStyle" onchange="saveSettings(); renderCanvas();">
+                        <option value="spruce" selected>🌲 Fichte Nordisch (Hell)</option>
+                        <option value="wood">🪵 Dunkle Eiche / Nussbaum</option>
+                        <option value="dark">⬛ Modern Dunkel</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Tafel-Deckkraft (<span id="opacityVal">100</span>%)</label>
+                    <input type="range" id="boxOpacity" min="0" max="100" value="100" oninput="document.getElementById('opacityVal').innerText = this.value; saveSettings(); renderCanvas();">
+                </div>
+            </div>
+
+            <!-- Größe, Position & Strophen-Schriftgröße -->
+            <div class="slider-grid">
+                <div>
+                    <label>Tafel (<span id="scaleVal">100</span>%)</label>
+                    <input type="range" id="boardScale" min="30" max="120" value="100" oninput="document.getElementById('scaleVal').innerText = this.value; saveSettings(); renderCanvas();">
+                </div>
+                <div>
+                    <label>Pos. X (<span id="posXVal">50</span>%)</label>
+                    <input type="range" id="boardPosX" min="0" max="100" value="50" oninput="document.getElementById('posXVal').innerText = this.value; saveSettings(); renderCanvas();">
+                </div>
+                <div>
+                    <label>Pos. Y (<span id="posYVal">50</span>%)</label>
+                    <input type="range" id="boardPosY" min="0" max="100" value="50" oninput="document.getElementById('posYVal').innerText = this.value; saveSettings(); renderCanvas();">
+                </div>
+                <div>
+                    <label>Strophen (<span id="strSizeVal">95</span>px)</label>
+                    <input type="range" id="strophenSize" min="65" max="140" value="95" oninput="document.getElementById('strSizeVal').innerText = this.value; saveSettings(); renderCanvas();">
+                </div>
+            </div>
+
+            <!-- "Str." Präfix ein-/ausschalten -->
+            <label class="checkbox-row">
+                <input type="checkbox" id="showStrPrefix" checked onchange="saveSettings(); renderCanvas();">
+                <span>Präfix <b>„Str.“</b> vor den Strophen anzeigen (sonst nur Zahlen/Text)</span>
+            </label>
+        </div>
+
+        <h2>Lieder & Strophen</h2>
+        <div class="song-list" id="songList"></div>
+
+        <button class="btn-add" onclick="addSongRow()">+ Weiteres Lied hinzufügen</button>
+
+        <!-- Versteckte ATEM-Einstellungen unter "Erweitert" -->
+        <details class="advanced-settings">
+            <summary>⚙️ Erweitert (ATEM-Einstellungen)</summary>
+            <div class="settings-grid">
+                <div>
+                    <label>ATEM IP-Adresse</label>
+                    <input type="text" id="atemIp" value="172.16.8.11" oninput="saveSettings()">
+                </div>
+                <div>
+                    <label>Auflösung (Mischer-Standard)</label>
+                    <select id="resolution" onchange="saveSettings(); renderCanvas();">
+                        <option value="1920x1080" selected>1080p (1920x1080)</option>
+                        <option value="1280x720">720p (1280x720)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Media Pool Slot</label>
+                    <input type="number" id="poolSlot" value="19" min="1" max="40" oninput="saveSettings()">
+                </div>
+                <div>
+                    <label>Ziel Media Player</label>
+                    <select id="mediaPlayer" onchange="saveSettings()">
+                        <option value="0">Media Player 1</option>
+                        <option value="1" selected>Media Player 2</option>
+                    </select>
+                </div>
+            </div>
+        </details>
+
+        <!-- Aktions-Buttons: Bild speichern & ATEM Upload -->
+        <div class="action-row">
+            <button class="btn-save" onclick="saveImage()">💾 Als PNG speichern</button>
+            <button class="btn-upload" id="uploadBtn" onclick="uploadToAtem()">In ATEM Media Player laden</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <!-- Rechte Live-Vorschau -->
+    <div class="panel preview-container">
+        <h2 style="align-self: flex-start; width: 100%;">Live-Vorschau</h2>
+        <canvas id="tafelCanvas" width="1920" height="1080"></canvas>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let backgroundImage = null;
+        let boardTextureImage = null;
+
+        const FARBEN = [
+            { name: 'Transparent', hex: 'transparent' },
+            { name: 'Blau', hex: '#1565C0' },
+            { name: 'Rot', hex: '#C62828' },
+            { name: 'Grün', hex: '#2E7D32' },
+            { name: 'Gelb', hex: '#F9A825' },
+            { name: 'Lila', hex: '#6A1B9A' },
+            { name: 'Weiß', hex: '#E0E0E0' },
+            { name: 'Schwarz', hex: '#212121' }
+        ];
+
+        function loadBackgroundFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem('savedBgImage', e.target.result);
+                setBackgroundFromDataUrl(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setBackgroundFromDataUrl(dataUrl) {
+            const img = new Image();
+            img.onload = () => { backgroundImage = img; renderCanvas(); };
+            img.src = dataUrl;
+        }
+
+        function clearBackground() {
+            backgroundImage = null;
+            document.getElementById('bgInput').value = '';
+            localStorage.removeItem('savedBgImage');
+            renderCanvas();
+        }
+
+        function loadTextureFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem('savedBoardTexture', e.target.result);
+                setTextureFromDataUrl(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setTextureFromDataUrl(dataUrl) {
+            const img = new Image();
+            img.onload = () => { boardTextureImage = img; renderCanvas(); };
+            img.src = dataUrl;
+        }
+
+        function clearTexture() {
+            boardTextureImage = null;
+            document.getElementById('texInput').value = '';
+            localStorage.removeItem('savedBoardTexture');
+            renderCanvas();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('atemIp', document.getElementById('atemIp').value.trim());
+            localStorage.setItem('resolution', document.getElementById('resolution').value);
+            localStorage.setItem('poolSlot', document.getElementById('poolSlot').value);
+            localStorage.setItem('mediaPlayer', document.getElementById('mediaPlayer').value);
+            localStorage.setItem('boardStyle', document.getElementById('boardStyle').value);
+            localStorage.setItem('boxOpacity', document.getElementById('boxOpacity').value);
+            localStorage.setItem('boardScale', document.getElementById('boardScale').value);
+            localStorage.setItem('boardPosX', document.getElementById('boardPosX').value);
+            localStorage.setItem('boardPosY', document.getElementById('boardPosY').value);
+            localStorage.setItem('strophenSize', document.getElementById('strophenSize').value);
+            localStorage.setItem('showStrPrefix', document.getElementById('showStrPrefix').checked);
+        }
+
+        function addSongRow(nr = '', farbe = 'transparent', strophen = '') {
+            const container = document.getElementById('songList');
+            const row = document.createElement('div');
+            row.className = 'song-row';
+
+            const colorOptions = FARBEN.map(f => 
+                `<option value="${f.hex}" ${f.hex === farbe ? 'selected' : ''}>${f.name}</option>`
+            ).join('');
+
+            row.innerHTML = `
+                <input type="text" placeholder="Nr. (z.B. 324)" value="${nr}" oninput="renderCanvas()" class="inp-nr">
+                <select onchange="renderCanvas()" class="inp-color">${colorOptions}</select>
+                <input type="text" placeholder="Strophen (leer = ohne)" value="${strophen}" oninput="renderCanvas()" class="inp-str">
+                <button class="btn-del" onclick="this.parentElement.remove(); renderCanvas();">✕</button>
+            `;
+            container.appendChild(row);
+            renderCanvas();
+        }
+
+        function drawSpruceBoard(ctx, x, y, w, h, s, opacity) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+            ctx.shadowBlur = 25 * s;
+            ctx.shadowOffsetY = 10 * s;
+
+            if (boardTextureImage) {
+                ctx.drawImage(boardTextureImage, x, y, w, h);
+                ctx.shadowColor = 'transparent';
+            } else {
+                const spruceGrad = ctx.createLinearGradient(x, y, x, y + h);
+                spruceGrad.addColorStop(0, '#e8cfa6');
+                spruceGrad.addColorStop(0.5, '#dfbe8f');
+                spruceGrad.addColorStop(1, '#d5b17d');
+                ctx.fillStyle = spruceGrad;
+                ctx.fillRect(x, y, w, h);
+
+                ctx.shadowColor = 'transparent';
+
+                const step = Math.max(1.5, 2.5 * s);
+                for (let i = 0; i < h; i += step) {
+                    const wave = Math.sin(i * 0.04) * 0.025;
+                    ctx.fillStyle = (Math.floor(i / step) % 5 === 0)
+                        ? `rgba(165, 115, 55, ${0.10 + wave})`
+                        : `rgba(255, 245, 225, ${0.12 + wave})`;
+                    ctx.fillRect(x, y + i, w, 1.8 * s);
+                }
+
+                const plankCount = 4;
+                const plankH = h / plankCount;
+                ctx.strokeStyle = 'rgba(140, 95, 45, 0.35)';
+                ctx.lineWidth = 2 * s;
+                for (let p = 1; p < plankCount; p++) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + p * plankH);
+                    ctx.lineTo(x + w, y + p * plankH);
+                    ctx.stroke();
+                }
+
+                const knots = [
+                    { kx: x + w * 0.82, ky: y + h * 0.22, rx: 18 * s, ry: 8 * s },
+                    { kx: x + w * 0.48, ky: y + h * 0.68, rx: 14 * s, ry: 6 * s },
+                    { kx: x + w * 0.88, ky: y + h * 0.85, rx: 22 * s, ry: 9 * s }
+                ];
+                knots.forEach(k => {
+                    ctx.fillStyle = 'rgba(130, 82, 35, 0.35)';
+                    ctx.beginPath();
+                    ctx.ellipse(k.kx, k.ky, k.rx, k.ry, 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(95, 55, 20, 0.45)';
+                    ctx.beginPath();
+                    ctx.ellipse(k.kx, k.ky, k.rx * 0.45, k.ry * 0.45, 0.08, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            const frameWidth = 20 * s;
+            ctx.lineWidth = frameWidth;
+            ctx.strokeStyle = '#c49b66';
+            ctx.strokeRect(x + frameWidth / 2, y + frameWidth / 2, w - frameWidth, h - frameWidth);
+
+            ctx.lineWidth = 3 * s;
+            ctx.strokeStyle = '#7a5229';
+            ctx.strokeRect(x + frameWidth, y + frameWidth, w - frameWidth * 2, h - frameWidth * 2);
+
+            ctx.restore();
+        }
+
+        function drawDarkWoodBoard(ctx, x, y, w, h, s, opacity) {
+            ctx.save();
+            ctx.globalAlpha = opacity;
+
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+            ctx.shadowBlur = 25 * s;
+            ctx.shadowOffsetY = 10 * s;
+
+            if (boardTextureImage) {
+                ctx.drawImage(boardTextureImage, x, y, w, h);
+                ctx.shadowColor = 'transparent';
+            } else {
+                const woodGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+                woodGrad.addColorStop(0, '#4e2f18');
+                woodGrad.addColorStop(0.5, '#3b2210');
+                woodGrad.addColorStop(1, '#2c180a');
+                ctx.fillStyle = woodGrad;
+                ctx.fillRect(x, y, w, h);
+                ctx.shadowColor = 'transparent';
+
+                const step = Math.max(2, 3 * s);
+                for (let i = 0; i < h; i += step) {
+                    const wave = Math.sin(i * 0.05) * 0.03;
+                    ctx.fillStyle = (Math.floor(i / step) % 6 === 0) 
+                        ? `rgba(255, 210, 160, ${0.03 + wave})` 
+                        : `rgba(15, 5, 0, ${0.08 + wave})`;
+                    ctx.fillRect(x, y + i, w, 2 * s);
+                }
+            }
+
+            const frameWidth = 22 * s;
+            ctx.lineWidth = frameWidth;
+            ctx.strokeStyle = '#5c381c';
+            ctx.strokeRect(x + frameWidth / 2, y + frameWidth / 2, w - frameWidth, h - frameWidth);
+
+            ctx.lineWidth = 3 * s;
+            ctx.strokeStyle = '#8d6e46';
+            ctx.strokeRect(x + frameWidth, y + frameWidth, w - frameWidth * 2, h - frameWidth * 2);
+
+            ctx.restore();
+        }
+
+        function renderCanvas() {
+            const canvas = document.getElementById('tafelCanvas');
+            const ctx = canvas.getContext('2d');
+            const [w, h] = document.getElementById('resolution').value.split('x').map(Number);
+            
+            canvas.width = w;
+            canvas.height = h;
+            const resScale = w / 1920;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // 1. Äußeres Hintergrundbild zeichnen
+            if (backgroundImage) {
+                const imgRatio = backgroundImage.width / backgroundImage.height;
+                const canvasRatio = w / h;
+                let drawW = w, drawH = h, offsetX = 0, offsetY = 0;
+
+                if (imgRatio > canvasRatio) {
+                    drawW = h * imgRatio;
+                    offsetX = (w - drawW) / 2;
+                } else {
+                    drawH = w / imgRatio;
+                    offsetY = (h - drawH) / 2;
+                }
+                ctx.drawImage(backgroundImage, offsetX, offsetY, drawW, drawH);
+            }
+
+            // 2. Tafel-Größe & Position berechnen
+            const userScale = parseInt(document.getElementById('boardScale').value, 10) / 100;
+            const posXPercent = parseInt(document.getElementById('boardPosX').value, 10) / 100;
+            const posYPercent = parseInt(document.getElementById('boardPosY').value, 10) / 100;
+
+            const s = resScale * userScale;
+            const boxW = 1600 * s;
+            const boxH = 880 * s;
+            const boxX = (w - boxW) * posXPercent;
+            const boxY = (h - boxH) * posYPercent;
+
+            // 3. Tafel-Hintergrund zeichnen
+            const opacity = parseInt(document.getElementById('boxOpacity').value, 10) / 100;
+            const style = document.getElementById('boardStyle').value;
+
+            if (opacity > 0) {
+                if (style === 'spruce') {
+                    drawSpruceBoard(ctx, boxX, boxY, boxW, boxH, s, opacity);
+                } else if (style === 'wood') {
+                    drawDarkWoodBoard(ctx, boxX, boxY, boxW, boxH, s, opacity);
+                } else {
+                    ctx.fillStyle = `rgba(20, 20, 20, ${opacity})`;
+                    ctx.fillRect(boxX, boxY, boxW, boxH);
+                    ctx.strokeStyle = `rgba(85, 85, 85, ${opacity})`;
+                    ctx.lineWidth = 4 * s;
+                    ctx.strokeRect(boxX, boxY, boxW, boxH);
+                }
+            }
+
+            // 4. Lieder auslesen
+            const rows = document.querySelectorAll('.song-row');
+            const songs = [];
+            rows.forEach(r => {
+                const nr = r.querySelector('.inp-nr').value.trim();
+                const color = r.querySelector('.inp-color').value;
+                const str = r.querySelector('.inp-str').value.trim();
+                if (nr) songs.push({ nr, color, str });
+            });
+
+            if (songs.length === 0) return;
+
+            const maxZeilen = Math.max(songs.length, 4);
+            const innerPaddingY = 40 * s;
+            const zeilenHoehe = (boxH - innerPaddingY * 2) / maxZeilen;
+            let startY = boxY + innerPaddingY;
+
+            const isLightSpruce = (style === 'spruce' && opacity > 0.3 && !boardTextureImage);
+            const showPrefix = document.getElementById('showStrPrefix').checked;
+            const strophenFontSize = parseInt(document.getElementById('strophenSize').value, 10);
+
+            // Einheitliche Spalten-Positionen für ALLE Zeilen
+            const colorBoxX = boxX + 55 * s;
+            const colorBoxW = 85 * s;
+            const textStartX = boxX + 180 * s;      // Feste X-Position für alle Liednummern
+            const strophenStartX = boxX + 590 * s;  // Feste X-Position für alle Strophen
+
+            songs.forEach(lied => {
+                const centerY = startY + zeilenHoehe / 2;
+                const isTransparent = (lied.color === 'transparent');
+
+                // Farbkarte links (wenn eine Farbe gewählt ist)
+                if (!isTransparent) {
+                    ctx.save();
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                    ctx.shadowBlur = 6 * s;
+                    ctx.fillStyle = lied.color;
+                    ctx.fillRect(colorBoxX, startY + 18 * s, colorBoxW, zeilenHoehe - 36 * s);
+                    ctx.restore();
+                }
+
+                ctx.save();
+                if (isLightSpruce) {
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+                    ctx.shadowBlur = 4 * s;
+                    ctx.shadowOffsetX = 2 * s;
+                    ctx.shadowOffsetY = 2 * s;
+                    ctx.fillStyle = '#1f1209';
+                } else {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+                    ctx.shadowBlur = 8 * s;
+                    ctx.shadowOffsetX = 3 * s;
+                    ctx.shadowOffsetY = 3 * s;
+                    ctx.fillStyle = '#FFFFFF';
+                }
+
+                // Liednummer
+                ctx.font = `bold ${Math.round(95 * s)}px Arial`;
+                ctx.textBaseline = 'middle';
+                ctx.fillText(lied.nr, textStartX, centerY);
+
+                // Strophen (jetzt deutlich größer und per Regler frei skalierbar)
+                if (lied.str) {
+                    ctx.fillStyle = isLightSpruce ? '#4e260c' : '#FFE082';
+                    ctx.font = `bold ${Math.round(strophenFontSize * s)}px Arial`;
+                    const strophenText = showPrefix ? `Str. ${lied.str}` : lied.str;
+                    ctx.fillText(strophenText, strophenStartX, centerY);
+                }
+                ctx.restore();
+
+                // Einschubleisten / Trennlinien
+                if (opacity > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = opacity;
+                    const lineX = boxX + 35 * s;
+                    const lineW = boxW - 70 * s;
+
+                    if (style === 'spruce') {
+                        ctx.fillStyle = '#9c7344';
+                        ctx.fillRect(lineX, startY + zeilenHoehe - 5 * s, lineW, 6 * s);
+                        ctx.fillStyle = '#f3dfc1';
+                        ctx.fillRect(lineX, startY + zeilenHoehe + 1 * s, lineW, 3 * s);
+                    } else if (style === 'wood') {
+                        ctx.fillStyle = '#241205';
+                        ctx.fillRect(lineX, startY + zeilenHoehe - 6 * s, lineW, 8 * s);
+                        ctx.fillStyle = '#6e4526';
+                        ctx.fillRect(lineX, startY + zeilenHoehe + 2 * s, lineW, 4 * s);
+                    } else {
+                        ctx.strokeStyle = `rgba(255, 255, 255, 0.25)`;
+                        ctx.lineWidth = 2 * s;
+                        ctx.beginPath();
+                        ctx.moveTo(lineX, startY + zeilenHoehe);
+                        ctx.lineTo(lineX + lineW, startY + zeilenHoehe);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+
+                startY += zeilenHoehe;
+            });
+        }
+
+        function saveImage() {
+            const canvas = document.getElementById('tafelCanvas');
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            const datum = new Date().toISOString().slice(0, 10);
+            link.download = `Liedertafel_${datum}.png`;
+            link.href = dataUrl;
+            link.click();
+
+            const status = document.getElementById('status');
+            status.style.color = '#66bb6a';
+            status.innerText = '✔ Bild erfolgreich als PNG gespeichert!';
+        }
+
+        async function uploadToAtem() {
+            const btn = document.getElementById('uploadBtn');
+            const status = document.getElementById('status');
+            const ip = document.getElementById('atemIp').value.trim();
+            const slot = parseInt(document.getElementById('poolSlot').value, 10) - 1;
+            const mp = parseInt(document.getElementById('mediaPlayer').value, 10);
+
+            const canvas = document.getElementById('tafelCanvas');
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            btn.disabled = true;
+            status.style.color = '#4fc3f7';
+            status.innerText = `Verbinde mit ATEM (${ip}) -> Slot ${slot + 1}, MP ${mp + 1}...`;
+
+            try {
+                const msg = await ipcRenderer.invoke('upload-to-atem', {
+                    ip,
+                    slot,
+                    mp,
+                    rgbaArray: imageData.data.buffer
+                });
+                status.style.color = '#66bb6a';
+                status.innerText = '✔ ' + msg;
+            } catch (err) {
+                status.style.color = '#ef5350';
+                status.innerText = '✖ ' + err.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('atemIp').value = localStorage.getItem('atemIp') || '172.16.8.11';
+            document.getElementById('resolution').value = localStorage.getItem('resolution') || '1920x1080';
+            document.getElementById('poolSlot').value = localStorage.getItem('poolSlot') || '19';
+            document.getElementById('mediaPlayer').value = localStorage.getItem('mediaPlayer') || '1';
+            document.getElementById('boardStyle').value = localStorage.getItem('boardStyle') || 'spruce';
+            
+            const savedOpacity = localStorage.getItem('boxOpacity') || '100';
+            document.getElementById('boxOpacity').value = savedOpacity;
+            document.getElementById('opacityVal').innerText = savedOpacity;
+
+            const savedScale = localStorage.getItem('boardScale') || '100';
+            document.getElementById('boardScale').value = savedScale;
+            document.getElementById('scaleVal').innerText = savedScale;
+
+            const savedPosX = localStorage.getItem('boardPosX') || '50';
+            document.getElementById('boardPosX').value = savedPosX;
+            document.getElementById('posXVal').innerText = savedPosX;
+
+            const savedPosY = localStorage.getItem('boardPosY') || '50';
+            document.getElementById('boardPosY').value = savedPosY;
+            document.getElementById('posYVal').innerText = savedPosY;
+
+            const savedStrSize = localStorage.getItem('strophenSize') || '95';
+            document.getElementById('strophenSize').value = savedStrSize;
+            document.getElementById('strSizeVal').innerText = savedStrSize;
+
+            const savedPrefix = localStorage.getItem('showStrPrefix');
+            if (savedPrefix !== null) {
+                document.getElementById('showStrPrefix').checked = (savedPrefix === 'true');
+            }
+
+            const savedBg = localStorage.getItem('savedBgImage');
+            if (savedBg) setBackgroundFromDataUrl(savedBg);
+
+            const savedTex = localStorage.getItem('savedBoardTexture');
+            if (savedTex) setTextureFromDataUrl(savedTex);
+
+            addSongRow('104', 'transparent', '1-3');
+            addSongRow('241', 'transparent', '1, 2, 5');
+            addSongRow('312', 'transparent', 'alle');
+            addSongRow('', 'transparent', '');
+        };
+    </script>
+</body>
+</html>
