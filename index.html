@@ -127,6 +127,64 @@
             border-bottom: 1px solid #333;
             padding-bottom: 6px;
         }
+        details.design-settings {
+            background: #222;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            padding: 7px 12px;
+            max-height: 60vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        details.design-settings summary {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            color: #4fc3f7;
+            user-select: none;
+            outline: none;
+        }
+        details.design-settings[open] summary {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 6px;
+        }
+        details.design-settings .bg-controls {
+            border: none;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        .val-edit {
+            cursor: pointer;
+            color: #4fc3f7;
+            border-bottom: 1px dotted #4fc3f7;
+        }
+        .val-edit:hover { color: #fff; border-bottom-color: #fff; }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: #2a2a2a;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 18px 20px;
+            width: 300px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .modal-box h3 { margin: 0 0 12px; font-size: 15px; color: #4fc3f7; }
+        .modal-box input { font-size: 16px !important; padding: 8px !important; }
+        .modal-hint { font-size: 11px; color: #888; margin-top: 6px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+        .btn-ok { background: #0288d1; color: #fff; }
+        .btn-ok:hover { background: #0277bd; }
         .bg-controls {
             background: #222;
             padding: 10px 12px;
@@ -231,9 +289,8 @@
     <!-- Linkes Bedienfeld -->
     <div class="panel">
         
-        <div class="header-flex">
-            <h2>Hintergrund & Tafel-Design (16:9)</h2>
-        </div>
+        <details class="design-settings" id="designSettings" open ontoggle="localStorage.setItem('designSettingsOpen', this.open)">
+        <summary>🎨 Hintergrund & Tafel-Design (16:9)</summary>
         <div class="bg-controls">
             <!-- Äußeres Hintergrundbild -->
             <input type="file" id="bgInput" accept="image/*" style="display: none;" onchange="loadBackgroundFile(event)">
@@ -259,12 +316,12 @@
                     </select>
                 </div>
                 <div>
-                    <label>BG-Skal. (<span id="bgScaleVal">50</span>%)</label>
-                    <input type="range" id="bgScale" min="10" max="200" value="50" oninput="document.getElementById('bgScaleVal').innerText = this.value; saveSettings(); renderCanvas();">
+                    <label>BG-Skal. (<span id="bgScaleVal" class="val-edit" title="Klicken für genauen Wert" onclick="openValueDialog('bgScale', 'Hintergrund-Skalierung')">50</span>%)</label>
+                    <input type="range" id="bgScale" min="10" max="200" step="any" value="50" data-display="bgScaleVal" oninput="onScaleInput(this)" ondblclick="openValueDialog('bgScale', 'Hintergrund-Skalierung')">
                 </div>
                 <div>
-                    <label>Textur-Skal. (<span id="texScaleVal">50</span>%)</label>
-                    <input type="range" id="texScale" min="10" max="200" value="50" oninput="document.getElementById('texScaleVal').innerText = this.value; saveSettings(); renderCanvas();">
+                    <label>Textur-Skal. (<span id="texScaleVal" class="val-edit" title="Klicken für genauen Wert" onclick="openValueDialog('texScale', 'Textur-Skalierung')">50</span>%)</label>
+                    <input type="range" id="texScale" min="10" max="200" step="any" value="50" data-display="texScaleVal" oninput="onScaleInput(this)" ondblclick="openValueDialog('texScale', 'Textur-Skalierung')">
                 </div>
                 <div>
                     <label>Helligkeit (<span id="bgBrightVal">100</span>%)</label>
@@ -319,8 +376,8 @@
             <!-- Größe (16:9), Position & Strophen-Schriftgröße -->
             <div class="slider-grid">
                 <div>
-                    <label>Tafel 16:9 (<span id="scaleVal">100</span>%)</label>
-                    <input type="range" id="boardScale" min="30" max="120" value="100" oninput="document.getElementById('scaleVal').innerText = this.value; saveSettings(); renderCanvas();">
+                    <label>Tafel 16:9 (<span id="scaleVal" class="val-edit" title="Klicken für genauen Wert" onclick="openValueDialog('boardScale', 'Tafel-Größe')">100</span>%)</label>
+                    <input type="range" id="boardScale" min="30" max="120" step="any" value="100" data-display="scaleVal" oninput="onScaleInput(this)" ondblclick="openValueDialog('boardScale', 'Tafel-Größe')">
                 </div>
                 <div>
                     <label>Pos. X (<span id="posXVal">50</span>%)</label>
@@ -342,6 +399,7 @@
                 <span>Präfix <b>„Str.“</b> vor den Strophen anzeigen (sonst nur Zahlen/Text)</span>
             </label>
         </div>
+        </details>
 
         <div class="header-flex">
             <h2>Lieder & Strophen (Auto-Save aktiv)</h2>
@@ -352,7 +410,7 @@
         <button class="btn-add" onclick="addSongRow()">+ Weiteres Lied hinzufügen</button>
 
         <!-- Versteckte ATEM- & Vollbild-Einstellungen unter "Erweitert" -->
-        <details class="advanced-settings">
+        <details class="advanced-settings" id="advancedSettings" ontoggle="localStorage.setItem('advancedSettingsOpen', this.open)">
             <summary>⚙️ Erweitert (ATEM- & Monitor-Einstellungen)</summary>
             <div class="settings-grid">
                 <div>
@@ -411,6 +469,19 @@
         <canvas id="tafelCanvas" width="1920" height="1080"></canvas>
     </div>
 
+    <!-- Dialog für genaue (Komma-)Werte -->
+    <div class="modal-overlay" id="valueModal" onmousedown="if (event.target === this) closeValueDialog()">
+        <div class="modal-box">
+            <h3 id="valueModalTitle">Wert eingeben</h3>
+            <input type="text" inputmode="decimal" id="valueModalInput" autocomplete="off">
+            <div class="modal-hint" id="valueModalHint"></div>
+            <div class="modal-buttons">
+                <button class="btn-small" onclick="closeValueDialog()">Abbrechen</button>
+                <button class="btn-ok" onclick="applyValueDialog()">Übernehmen</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
 
@@ -427,6 +498,58 @@
             { name: 'Weiß', hex: '#E0E0E0' },
             { name: 'Schwarz', hex: '#212121' }
         ];
+
+        // Zahl mit max. 2 Nachkommastellen und deutschem Komma anzeigen
+        function formatNum(v) {
+            return (Math.round(parseFloat(v) * 100) / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 });
+        }
+
+        function onScaleInput(slider) {
+            document.getElementById(slider.dataset.display).innerText = formatNum(slider.value);
+            saveSettings();
+            renderCanvas();
+        }
+
+        let valueDialogTarget = null;
+
+        function openValueDialog(sliderId, title) {
+            const slider = document.getElementById(sliderId);
+            valueDialogTarget = slider;
+            document.getElementById('valueModalTitle').innerText = title + ' (%)';
+            document.getElementById('valueModalHint').innerText =
+                `Bereich ${formatNum(slider.min)} – ${formatNum(slider.max)} %, Kommazahlen erlaubt (z.B. 47,5)`;
+            const input = document.getElementById('valueModalInput');
+            input.value = formatNum(slider.value);
+            input.style.borderColor = '';
+            document.getElementById('valueModal').classList.add('show');
+            setTimeout(() => { input.focus(); input.select(); }, 0);
+        }
+
+        function closeValueDialog() {
+            document.getElementById('valueModal').classList.remove('show');
+            valueDialogTarget = null;
+        }
+
+        function applyValueDialog() {
+            if (!valueDialogTarget) return;
+            const input = document.getElementById('valueModalInput');
+            const v = parseFloat(input.value.replace(',', '.').trim());
+            if (isNaN(v)) {
+                input.style.borderColor = '#ef5350';
+                return;
+            }
+            const min = parseFloat(valueDialogTarget.min);
+            const max = parseFloat(valueDialogTarget.max);
+            valueDialogTarget.value = Math.min(max, Math.max(min, v));
+            onScaleInput(valueDialogTarget);
+            closeValueDialog();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!document.getElementById('valueModal').classList.contains('show')) return;
+            if (e.key === 'Enter') { e.preventDefault(); applyValueDialog(); }
+            if (e.key === 'Escape') { e.preventDefault(); closeValueDialog(); }
+        });
 
         // Aktualisiert das Monitor-Auswahlmenü
         function populateMonitorSelect(displays) {
@@ -773,7 +896,7 @@
             ctx.shadowOffsetY = 10 * s;
 
             const brightnessPct = parseInt(document.getElementById('bgBrightness').value, 10);
-            const texScalePct = parseInt(document.getElementById('texScale').value, 10) / 100;
+            const texScalePct = parseFloat(document.getElementById('texScale').value) / 100;
 
             if (boardTextureImage) {
                 ctx.fillStyle = '#e8cfa6';
@@ -851,7 +974,7 @@
             ctx.shadowOffsetY = 10 * s;
 
             const brightnessPct = parseInt(document.getElementById('bgBrightness').value, 10);
-            const texScalePct = parseInt(document.getElementById('texScale').value, 10) / 100;
+            const texScalePct = parseFloat(document.getElementById('texScale').value) / 100;
 
             if (boardTextureImage) {
                 ctx.fillStyle = '#3b2210';
@@ -898,12 +1021,12 @@
 
             // 1. Äußeres Hintergrundbild zeichnen
             if (backgroundImage) {
-                const bgScalePct = parseInt(document.getElementById('bgScale').value, 10) / 100;
+                const bgScalePct = parseFloat(document.getElementById('bgScale').value) / 100;
                 drawImageTiledOrCover(ctx, backgroundImage, 0, 0, w, h, bgScalePct);
             }
 
             // 2. Tafel-Größe im 16:9-Format & Position berechnen
-            const userScale = parseInt(document.getElementById('boardScale').value, 10) / 100;
+            const userScale = parseFloat(document.getElementById('boardScale').value) / 100;
             const posXPercent = parseInt(document.getElementById('boardPosX').value, 10) / 100;
             const posYPercent = parseInt(document.getElementById('boardPosY').value, 10) / 100;
 
@@ -1097,6 +1220,10 @@
         }
 
         window.onload = async () => {
+            const savedDesignOpen = localStorage.getItem('designSettingsOpen');
+            if (savedDesignOpen !== null) document.getElementById('designSettings').open = (savedDesignOpen === 'true');
+            document.getElementById('advancedSettings').open = (localStorage.getItem('advancedSettingsOpen') === 'true');
+
             document.getElementById('atemIp').value = localStorage.getItem('atemIp') || '172.16.8.11';
             document.getElementById('resolution').value = localStorage.getItem('resolution') || '1920x1080';
             document.getElementById('poolSlot').value = localStorage.getItem('poolSlot') || '19';
@@ -1109,7 +1236,7 @@
 
             const savedScale = localStorage.getItem('boardScale') || '100';
             document.getElementById('boardScale').value = savedScale;
-            document.getElementById('scaleVal').innerText = savedScale;
+            document.getElementById('scaleVal').innerText = formatNum(savedScale);
 
             const savedPosX = localStorage.getItem('boardPosX') || '50';
             document.getElementById('boardPosX').value = savedPosX;
@@ -1132,11 +1259,11 @@
             
             const savedBgScale = localStorage.getItem('bgScale') || '50';
             document.getElementById('bgScale').value = savedBgScale;
-            document.getElementById('bgScaleVal').innerText = savedBgScale;
+            document.getElementById('bgScaleVal').innerText = formatNum(savedBgScale);
 
             const savedTexScale = localStorage.getItem('texScale') || '50';
             document.getElementById('texScale').value = savedTexScale;
-            document.getElementById('texScaleVal').innerText = savedTexScale;
+            document.getElementById('texScaleVal').innerText = formatNum(savedTexScale);
 
             const savedBrightness = localStorage.getItem('bgBrightness') || '100';
             document.getElementById('bgBrightness').value = savedBrightness;
