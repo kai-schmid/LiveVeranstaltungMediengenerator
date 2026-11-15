@@ -1,0 +1,40 @@
+// Einstiegspunkt der Oberfläche: verbindet die einzelnen Module miteinander.
+const settings = require('./settings');
+const songs = require('./songs');
+const imageStore = require('./images');
+const fullscreen = require('./fullscreen');
+const valueDialog = require('./value-dialog');
+const actions = require('./actions');
+const { readRenderConfig } = require('./config');
+const { renderTafel } = require('./render/tafel');
+
+const canvas = document.getElementById('tafelCanvas');
+
+function render() {
+    renderTafel(canvas, readRenderConfig(), songs.getVisibleSongs(), imageStore.images);
+    fullscreen.pushFrame(canvas);
+}
+
+// Beim Ändern einer Randfarbe die eigene Randfarbe automatisch aktivieren
+function enableCustomBorderOnColorPick() {
+    const useCustomBorder = document.getElementById('useCustomBorder');
+    ['customBorderColor', 'customInnerBorderColor'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+            useCustomBorder.checked = true;
+        });
+    });
+}
+
+async function start() {
+    settings.init({ onRender: render });
+    valueDialog.init({ onApply: settings.setValue });
+    enableCustomBorderOnColorPick();
+    songs.init({ onSongsChanged: render });
+    imageStore.init({ onImagesChanged: render });
+    actions.init(canvas);
+
+    render();
+    await fullscreen.init({ onRender: render });
+}
+
+start();

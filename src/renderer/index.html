@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>ATEM Liedertafel Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!--
+        Konventionen für die Bedienelemente (ausgewertet in js/settings.js):
+          data-setting="render"  -> Wert wird gespeichert und die Tafel neu gezeichnet
+          data-setting="store"   -> Wert wird nur gespeichert
+          data-display="<id>"    -> Element, in dem der aktuelle Reglerwert angezeigt wird
+          data-precise="<Titel>" -> Wert lässt sich zusätzlich über den Eingabedialog setzen
+          data-persist-open="<key>" (an <details>) -> Auf-/Zugeklappt-Zustand wird gemerkt
+    -->
+
+    <!-- Linkes Bedienfeld -->
+    <div class="panel">
+
+        <details class="collapsible design-settings" data-persist-open="designSettingsOpen" open>
+            <summary>🎨 Hintergrund & Tafel-Design (16:9)</summary>
+
+            <!-- Bilddateien -->
+            <input type="file" id="bgInput" accept="image/*" hidden>
+            <div class="bg-row">
+                <button class="btn-file" id="bgSelectBtn">🖼️ Äußeres Hintergrundbild...</button>
+                <button class="btn-clear-bg" id="bgClearBtn" title="Hintergrundbild entfernen">✕</button>
+            </div>
+
+            <input type="file" id="texInput" accept="image/*" hidden>
+            <div class="bg-row">
+                <button class="btn-file btn-texture" id="texSelectBtn">🪵 Eigene Holz-Textur (Foto) für Tafel...</button>
+                <button class="btn-clear-bg" id="texClearBtn" title="Holz-Textur entfernen">✕</button>
+            </div>
+
+            <!-- Bild-Modus, Skalierung, Helligkeit & Tönung -->
+            <div class="sub-grid-5 section-divider">
+                <div>
+                    <label for="bgMode">Bild-Modus</label>
+                    <select id="bgMode" data-setting="render">
+                        <option value="tile" selected>🧱 Kacheln</option>
+                        <option value="cover">🖼️ Vollbild</option>
+                    </select>
+                </div>
+                <div>
+                    <label>BG-Skal. (<span id="bgScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%)</label>
+                    <input type="range" id="bgScale" min="10" max="200" step="any" value="50"
+                           data-setting="render" data-display="bgScaleVal" data-precise="Hintergrund-Skalierung">
+                </div>
+                <div>
+                    <label>Textur-Skal. (<span id="texScaleVal" class="val-edit" title="Klicken für genauen Wert">50</span>%)</label>
+                    <input type="range" id="texScale" min="10" max="200" step="any" value="50"
+                           data-setting="render" data-display="texScaleVal" data-precise="Textur-Skalierung">
+                </div>
+                <div>
+                    <label>Helligkeit (<span id="bgBrightVal">100</span>%)</label>
+                    <input type="range" id="bgBrightness" min="20" max="180" value="100"
+                           data-setting="render" data-display="bgBrightVal">
+                </div>
+                <div>
+                    <label>Tönung (<span id="bgTintVal">0</span>%)</label>
+                    <div class="color-inline">
+                        <input type="color" id="bgTintColor" value="#d7a15c" data-setting="render">
+                        <input type="range" id="bgTintOpacity" min="0" max="100" value="0"
+                               data-setting="render" data-display="bgTintVal">
+                    </div>
+                </div>
+            </div>
+
+            <label class="checkbox-row">
+                <input type="checkbox" id="seamlessTile" checked data-setting="render">
+                <span><b>Nahtlose Textur:</b> Helligkeit & Übergänge am Kachel-Rand automatisch angleichen</span>
+            </label>
+
+            <!-- Tafel-Stil & Deckkraft -->
+            <div class="settings-grid section-divider">
+                <div>
+                    <label for="boardStyle">Tafel-Stil</label>
+                    <select id="boardStyle" data-setting="render">
+                        <option value="spruce" selected>🌲 Fichte Nordisch (Hell)</option>
+                        <option value="wood">🪵 Dunkle Eiche / Nussbaum</option>
+                        <option value="dark">⬛ Modern Dunkel</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Tafel-Deckkraft (<span id="opacityVal">100</span>%)</label>
+                    <input type="range" id="boxOpacity" min="0" max="100" value="100"
+                           data-setting="render" data-display="opacityVal">
+                </div>
+            </div>
+
+            <!-- Eigene Randfarbe & Einschubleisten-Farbe -->
+            <div class="border-custom-row section-divider">
+                <label class="inline-check">
+                    <input type="checkbox" id="useCustomBorder" data-setting="render">
+                    <b>Custom Randfarbe:</b>
+                </label>
+                <div class="color-inline">
+                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render">
+                    <label for="customBorderColor">Außenrand</label>
+                </div>
+                <div class="color-inline">
+                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render">
+                    <label for="customInnerBorderColor">Zierlinie & Leisten</label>
+                </div>
+            </div>
+
+            <!-- Größe, Position & Strophen-Schriftgröße -->
+            <div class="slider-grid section-divider">
+                <div>
+                    <label>Tafel 16:9 (<span id="scaleVal" class="val-edit" title="Klicken für genauen Wert">100</span>%)</label>
+                    <input type="range" id="boardScale" min="30" max="120" step="any" value="100"
+                           data-setting="render" data-display="scaleVal" data-precise="Tafel-Größe">
+                </div>
+                <div>
+                    <label>Pos. X (<span id="posXVal">50</span>%)</label>
+                    <input type="range" id="boardPosX" min="0" max="100" value="50"
+                           data-setting="render" data-display="posXVal">
+                </div>
+                <div>
+                    <label>Pos. Y (<span id="posYVal">50</span>%)</label>
+                    <input type="range" id="boardPosY" min="0" max="100" value="50"
+                           data-setting="render" data-display="posYVal">
+                </div>
+                <div>
+                    <label>Strophen (<span id="strSizeVal">95</span>px)</label>
+                    <input type="range" id="strophenSize" min="65" max="140" value="95"
+                           data-setting="render" data-display="strSizeVal">
+                </div>
+            </div>
+
+            <label class="checkbox-row">
+                <input type="checkbox" id="showStrPrefix" checked data-setting="render">
+                <span>Präfix <b>„Str.“</b> vor den Strophen anzeigen (sonst nur Zahlen/Text)</span>
+            </label>
+        </details>
+
+        <!-- Liederliste -->
+        <div class="header-flex">
+            <h2>Lieder & Strophen (Auto-Save aktiv)</h2>
+            <button class="btn-small" id="clearSongsBtn" title="Alle Lieder leeren">🗑️ Liste leeren</button>
+        </div>
+        <div class="song-list" id="songList"></div>
+        <button class="btn-add" id="addSongBtn">+ Weiteres Lied hinzufügen</button>
+
+        <!-- ATEM- & Monitor-Einstellungen -->
+        <details class="collapsible advanced-settings" data-persist-open="advancedSettingsOpen">
+            <summary>⚙️ Erweitert (ATEM- & Monitor-Einstellungen)</summary>
+            <div class="settings-grid">
+                <div>
+                    <label for="atemIp">ATEM IP-Adresse</label>
+                    <input type="text" id="atemIp" value="172.16.8.11" data-setting="store">
+                </div>
+                <div>
+                    <label for="resolution">Auflösung (Mischer-Standard)</label>
+                    <select id="resolution" data-setting="render">
+                        <option value="1920x1080" selected>1080p (1920x1080)</option>
+                        <option value="1280x720">720p (1280x720)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="poolSlot">Media Pool Slot</label>
+                    <input type="number" id="poolSlot" value="19" min="1" max="40" data-setting="store">
+                </div>
+                <div>
+                    <label for="mediaPlayer">Ziel Media Player</label>
+                    <select id="mediaPlayer" data-setting="store">
+                        <option value="0">Media Player 1</option>
+                        <option value="1" selected>Media Player 2</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="fullscreen-settings-row">
+                <label class="inline-check">
+                    <input type="checkbox" id="enableFullscreenPreview">
+                    <span>🖥️ <b>Vollbild-Vorschau</b> aktivieren</span>
+                </label>
+                <div>
+                    <label for="previewMonitor">Ziel-Monitor für Vollbild</label>
+                    <select id="previewMonitor">
+                        <option value="auto">Automatisch (2. Monitor bevorzugt)</option>
+                    </select>
+                </div>
+            </div>
+        </details>
+
+        <!-- Aktionen -->
+        <div class="action-row">
+            <button class="btn-save" id="saveImageBtn">💾 Als PNG speichern</button>
+            <button class="btn-upload" id="uploadBtn">In ATEM Media Player laden</button>
+        </div>
+        <div id="status"></div>
+    </div>
+
+    <!-- Rechte Live-Vorschau -->
+    <div class="panel preview-container">
+        <div class="header-flex preview-header">
+            <h2>Live-Vorschau (16:9)</h2>
+            <button class="btn-small" id="toggleFullscreenBtn">🖥️ Vollbild-Fenster ein/aus</button>
+        </div>
+        <canvas id="tafelCanvas" width="1920" height="1080"></canvas>
+    </div>
+
+    <!-- Dialog für genaue (Komma-)Werte -->
+    <div class="modal-overlay" id="valueModal">
+        <div class="modal-box">
+            <h3 id="valueModalTitle">Wert eingeben</h3>
+            <input type="text" inputmode="decimal" id="valueModalInput" autocomplete="off">
+            <div class="modal-hint" id="valueModalHint"></div>
+            <div class="modal-buttons">
+                <button class="btn-small" id="valueModalCancel">Abbrechen</button>
+                <button class="btn-ok" id="valueModalOk">Übernehmen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>require('./js/app.js');</script>
+</body>
+</html>

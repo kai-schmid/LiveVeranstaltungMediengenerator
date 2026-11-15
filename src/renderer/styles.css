@@ -1,0 +1,280 @@
+/* ---------- Layout ---------- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    margin: 0;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 540px 1fr;
+    gap: 25px;
+    height: calc(100vh - 40px);
+    box-sizing: border-box;
+}
+.panel {
+    background: #2a2a2a;
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    overflow: hidden;
+}
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    margin-bottom: 8px;
+}
+.preview-header {
+    width: 100%;
+    margin-bottom: 12px;
+}
+h2 { margin: 0; font-size: 15px; color: #4fc3f7; border: none; padding: 0; }
+
+/* ---------- Einklappbare Bereiche ---------- */
+details.collapsible {
+    background: #222;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    padding: 7px 12px;
+    flex-shrink: 0;
+}
+details.collapsible summary {
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
+    outline: none;
+}
+details.collapsible[open] summary {
+    border-bottom: 1px solid #333;
+    padding-bottom: 6px;
+}
+details.design-settings {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+details.design-settings summary { font-size: 15px; color: #4fc3f7; }
+details.design-settings[open] summary { margin-bottom: 8px; }
+details.advanced-settings summary { font-size: 12px; color: #90caf9; }
+details.advanced-settings[open] summary { margin-bottom: 10px; }
+
+/* ---------- Raster für Einstellungen ---------- */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.section-divider {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+}
+.slider-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+}
+.sub-grid-5 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr;
+    gap: 6px;
+    align-items: center;
+}
+.border-custom-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+}
+.fullscreen-settings-row {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #333;
+    align-items: center;
+}
+.bg-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+/* ---------- Formularelemente ---------- */
+label { font-size: 11px; color: #aaa; display: block; margin-bottom: 3px; white-space: nowrap; }
+input[type="text"], input[type="number"], select {
+    width: 100%;
+    padding: 5px 6px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 12px;
+}
+input[type="range"] { width: 100%; cursor: pointer; margin: 0; }
+input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+input[type="color"] {
+    -webkit-appearance: none;
+    border: 1px solid #555;
+    width: 28px;
+    height: 22px;
+    border-radius: 4px;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+.color-inline {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.color-inline label { margin: 0; }
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #333;
+    font-size: 12px;
+    color: #ddd;
+    cursor: pointer;
+}
+.inline-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #ddd;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 0;
+    white-space: normal;
+}
+
+/* Klickbarer Wert im Label (öffnet den Eingabedialog) */
+.val-edit {
+    cursor: pointer;
+    color: #4fc3f7;
+    border-bottom: 1px dotted #4fc3f7;
+}
+.val-edit:hover { color: #fff; border-bottom-color: #fff; }
+
+/* ---------- Liederliste ---------- */
+.song-list {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    padding-right: 5px;
+}
+.song-row {
+    display: grid;
+    grid-template-columns: 85px 115px 1fr 35px;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+    background: #333;
+    padding: 6px;
+    border-radius: 6px;
+}
+
+/* ---------- Buttons ---------- */
+button {
+    padding: 7px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+    font-size: 12px;
+}
+.btn-file { background: #455a64; color: white; flex: 1; }
+.btn-file:hover { background: #37474f; }
+.btn-texture { background: #6d4c41; }
+.btn-texture:hover { background: #5d4037; }
+.btn-clear-bg { background: #616161; color: white; }
+.btn-clear-bg:hover { background: #424242; }
+.btn-small { padding: 4px 8px; font-size: 11px; background: #424242; color: #ddd; }
+.btn-small:hover { background: #616161; }
+.btn-add { background: #388e3c; color: white; margin-bottom: 8px; font-size: 13px; padding: 8px; }
+.btn-add:hover { background: #2e7d32; }
+.btn-del { background: #d32f2f; color: white; padding: 5px; }
+.btn-ok { background: #0288d1; color: #fff; }
+.btn-ok:hover { background: #0277bd; }
+.action-row {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 10px;
+}
+.btn-save { background: #546e7a; color: white; font-size: 14px; padding: 11px; }
+.btn-save:hover { background: #455a64; }
+.btn-upload { background: #0288d1; color: white; font-size: 14px; padding: 11px; }
+.btn-upload:hover { background: #0277bd; }
+.btn-upload:disabled { background: #555; cursor: wait; }
+
+/* ---------- Vorschau ---------- */
+.preview-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #141414;
+    border: 2px dashed #444;
+    border-radius: 8px;
+    padding: 15px;
+}
+canvas {
+    width: 100%;
+    max-width: 680px;
+    aspect-ratio: 16 / 9;
+    background-image: linear-gradient(45deg, #222 25%, transparent 25%),
+                      linear-gradient(-45deg, #222 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #222 75%),
+                      linear-gradient(-45deg, transparent 75%, #222 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+}
+#status {
+    margin-top: 6px;
+    font-size: 13px;
+    text-align: center;
+    min-height: 18px;
+}
+#status.success { color: #66bb6a; }
+#status.info { color: #4fc3f7; }
+#status.error { color: #ef5350; }
+
+/* ---------- Eingabedialog ---------- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 18px 20px;
+    width: 300px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+.modal-box h3 { margin: 0 0 12px; font-size: 15px; color: #4fc3f7; }
+.modal-box input[type="text"] { font-size: 16px; padding: 8px; }
+.modal-box input.invalid { border-color: #ef5350; }
+.modal-hint { font-size: 11px; color: #888; margin-top: 6px; }
+.modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
