@@ -19,6 +19,108 @@ function drawFrame(ctx, rect, s, colors) {
     ctx.strokeRect(x + frameWidth, y + frameWidth, w - frameWidth * 2, h - frameWidth * 2);
 }
 
+// ---------- Rahmen aus Holz-Textur ----------
+
+// Aus welcher Höhe (Anteil der Tafelhöhe) die Holzstreifen für die vier Leisten entnommen werden –
+// bewusst zwischen den Brettfugen der prozeduralen Maserung und je Seite verschieden
+const FRAME_STRIP_SOURCE_Y = { top: 0.06, bottom: 0.56, left: 0.31, right: 0.81 };
+const FRAME_TEXTURE_SHADE = 0.22;   // Rahmen etwas dunkler als die Tafelfläche
+
+/** Zeichnet die Holzoberfläche einmal in ein unsichtbares Canvas, aus dem die Leisten geschnitten werden */
+function renderWoodCanvas(rect, s, cfg, images, style) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(Math.max(rect.w, rect.h));
+    canvas.height = Math.ceil(rect.h);
+    const woodStyle = style.drawGrain ? style : BOARD_STYLES.wood;   // Modern-Stil: dunkles Holz
+    drawWoodSurface(canvas.getContext('2d'),
+        { x: 0, y: 0, w: canvas.width, h: canvas.height }, s, cfg, images, woodStyle);
+    return canvas;
+}
+
+function clipPolygon(ctx, points) {
+    ctx.beginPath();
+    points.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+    ctx.closePath();
+    ctx.clip();
+}
+
+/**
+ * Rahmen wie aus vier Holzleisten mit Gehrung: oben/unten waagerechte, links/rechts senkrechte Maserung.
+ * @param innerColor Farbe der Zierlinie auf der Innenseite
+ */
+function drawTexturedFrame(ctx, rect, s, wood, innerColor) {
+    const { x, y, w, h } = rect;
+    const fw = FRAME_WIDTH * s;
+    const srcY = key => Math.min(wood.height - fw, FRAME_STRIP_SOURCE_Y[key] * wood.height);
+
+    const sides = [
+        {   // oben
+            poly: [[x, y], [x + w, y], [x + w - fw, y + fw], [x + fw, y + fw]],
+            draw: () => ctx.drawImage(wood, 0, srcY('top'), w, fw, x, y, w, fw)
+        },
+        {   // unten
+            poly: [[x, y + h], [x + w, y + h], [x + w - fw, y + h - fw], [x + fw, y + h - fw]],
+            draw: () => ctx.drawImage(wood, 0, srcY('bottom'), w, fw, x, y + h - fw, w, fw)
+        },
+        {   // links: Streifen um -90° gedreht
+            poly: [[x, y], [x + fw, y + fw], [x + fw, y + h - fw], [x, y + h]],
+            draw: () => {
+                ctx.translate(x, y + h);
+                ctx.rotate(-Math.PI / 2);
+                ctx.drawImage(wood, 0, srcY('left'), h, fw, 0, 0, h, fw);
+            }
+        },
+        {   // rechts: Streifen um +90° gedreht
+            poly: [[x + w, y], [x + w, y + h], [x + w - fw, y + h - fw], [x + w - fw, y + fw]],
+            draw: () => {
+                ctx.translate(x + w, y);
+                ctx.rotate(Math.PI / 2);
+                ctx.drawImage(wood, 0, srcY('right'), h, fw, 0, 0, h, fw);
+            }
+        }
+    ];
+
+    ctx.save();
+    ctx.shadowColor = 'transparent';
+    sides.forEach(side => {
+        ctx.save();
+        clipPolygon(ctx, side.poly);
+        side.draw();
+        ctx.restore();
+    });
+
+    // Rahmen insgesamt etwas abdunkeln, damit er sich von der Tafel abhebt
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.rect(x + fw, y + fw, w - 2 * fw, h - 2 * fw);
+    ctx.fillStyle = `rgba(0, 0, 0, ${FRAME_TEXTURE_SHADE})`;
+    ctx.fill('evenodd');
+
+    // Gehrungsfugen an den Ecken
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.lineWidth = Math.max(1, 1.2 * s);
+    ctx.beginPath();
+    [[x, y, x + fw, y + fw], [x + w, y, x + w - fw, y + fw],
+     [x, y + h, x + fw, y + h - fw], [x + w, y + h, x + w - fw, y + h - fw]]
+        .forEach(([x1, y1, x2, y2]) => { ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); });
+    ctx.stroke();
+
+    // Lichtkante außen oben/links, Schattenkante außen unten/rechts
+    const edge = Math.max(1, 2 * s);
+    ctx.fillStyle = 'rgba(255, 240, 215, 0.22)';
+    ctx.fillRect(x, y, w, edge);
+    ctx.fillRect(x, y, edge, h);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+    ctx.fillRect(x, y + h - edge, w, edge);
+    ctx.fillRect(x + w - edge, y, edge, h);
+
+    // Zierlinie innen
+    ctx.lineWidth = 3 * s;
+    ctx.strokeStyle = innerColor;
+    ctx.strokeRect(x + fw, y + fw, w - fw * 2, h - fw * 2);
+    ctx.restore();
+}
+
 function applyDropShadow(ctx, s, alpha) {
     ctx.shadowColor = `rgba(0, 0, 0, ${alpha})`;
     ctx.shadowBlur = 25 * s;
@@ -198,6 +300,12 @@ function resolveTrim(ctx, rect, s, cfg, style) {
             return trimFromColors(cfg.board.customBorder.outer, cfg.board.customBorder.inner);
         case 'wood':
             return trimFromWoodColor(ctx, rect, s);
+        case 'texture': {
+            // Leisten & Zierlinie farblich aus dem Holz, Rahmen selbst aus der Textur
+            const trim = trimFromWoodColor(ctx, rect, s);
+            trim.textured = true;
+            return trim;
+        }
         default:
             return { frame: style.frame, dividers: style.dividers };
     }
@@ -219,7 +327,10 @@ function drawBoard(ctx, rect, s, cfg, images) {
     style.drawSurface(ctx, rect, s, cfg, images, style);
     const trim = resolveTrim(ctx, rect, s, cfg, style);
 
-    if (trim.frame) {
+    if (trim.textured) {
+        const wood = renderWoodCanvas(rect, s, cfg, images, style);
+        drawTexturedFrame(ctx, rect, s, wood, trim.frame.inner);
+    } else if (trim.frame) {
         drawFrame(ctx, rect, s, trim.frame);
     } else {
         ctx.strokeStyle = 'rgb(85, 85, 85)';

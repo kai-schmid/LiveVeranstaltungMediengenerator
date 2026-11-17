@@ -39,7 +39,7 @@ function readRenderConfig() {
             scale: percent('boardScale'),
             posX: percent('boardPosX'),
             posY: percent('boardPosY'),
-            borderMode: value('borderMode'),       // 'style' | 'custom' | 'wood'
+            borderMode: value('borderMode'),       // 'style' | 'custom' | 'wood' | 'texture'
             customBorder: { outer: value('customBorderColor'), inner: value('customInnerBorderColor') }
         },
         text: {
