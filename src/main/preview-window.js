@@ -29,6 +29,7 @@ function open(displayId) {
         autoHideMenuBar: true,
         backgroundColor: '#000000',
         title: 'Liedertafel - Vollbild-Vorschau',
+        icon: path.join(__dirname, '..', 'icons', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

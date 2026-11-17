@@ -6,6 +6,13 @@ const { uploadStillToAtem } = require('./src/main/atem-upload');
 
 let mainWindow = null;
 
+const APP_ICON = path.join(__dirname, 'src', 'icons', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+
+// Sorgt unter Windows dafür, dass Taskleiste und Startmenü das App-Icon (statt des Electron-Icons) verwenden
+if (process.platform === 'win32') {
+    app.setAppUserModelId('de.liedertafel.atem');
+}
+
 function sendToMainWindow(channel, payload) {
     if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send(channel, payload);
@@ -18,6 +25,7 @@ function createMainWindow() {
         height: 820,
         title: 'ATEM Constellation HD - Liedertafel Generator',
         autoHideMenuBar: true,
+        icon: APP_ICON,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false

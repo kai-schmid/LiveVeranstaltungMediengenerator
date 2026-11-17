@@ -35,11 +35,14 @@
     "files": [
       "main.js",
       "src/**/*",
+      "!src/icons/LiveVeranstaltungMediengenerator.*",
       "package.json"
     ],
     "npmRebuild": false,
+    "icon": "src/icons/icon.png",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "win": {
+      "icon": "src/icons/icon.ico",
       "target": [
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
@@ -48,6 +51,9 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "installerIcon": "src/icons/icon.ico",
+      "uninstallerIcon": "src/icons/icon.ico",
+      "installerHeaderIcon": "src/icons/icon.ico",
       "artifactName": "${productName}-${version}-windows-setup-${arch}.${ext}"
     },
     "portable": {
