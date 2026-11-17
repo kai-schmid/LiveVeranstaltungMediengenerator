@@ -6,6 +6,7 @@ const fullscreen = require('./fullscreen');
 const valueDialog = require('./value-dialog');
 const actions = require('./actions');
 const backup = require('./backup');
+const update = require('./update');
 const { readRenderConfig } = require('./config');
 const { runMigrations } = require('./migrations');
 const { renderTafel } = require('./render/tafel');
@@ -25,6 +26,7 @@ async function start() {
     imageStore.init({ onImagesChanged: render });
     actions.init(canvas);
     backup.init({ onImported: render });
+    update.init().catch((e) => console.warn('Update-Hinweis nicht verfügbar:', e));
 
     render();
     await fullscreen.init({ onRender: render });

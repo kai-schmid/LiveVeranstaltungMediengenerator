@@ -290,6 +290,29 @@ canvas {
 #status.info { color: #4fc3f7; }
 #status.error { color: #ef5350; }
 
+/* ---------- Update-Hinweis ---------- */
+.update-check-info.success { color: #66bb6a; }
+.update-check-info.info { color: #4fc3f7; }
+.update-check-info.error { color: #ef5350; }
+
+.update-banner {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 900;
+    width: 360px;
+    background: #2a2a2a;
+    border: 1px solid #0288d1;
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    display: none;
+}
+.update-banner.visible { display: block; }
+.update-banner-title { font-weight: bold; color: #4fc3f7; margin-bottom: 4px; }
+.update-banner-text { font-size: 13px; color: #ddd; margin-bottom: 10px; }
+.update-banner-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+
 /* ---------- Eingabedialog ---------- */
 .modal-overlay {
     position: fixed;

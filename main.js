@@ -1,5 +1,6 @@
 const path = require('path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const updateCheck = require('./src/main/update-check');
 const displays = require('./src/main/displays');
 const previewWindow = require('./src/main/preview-window');
 const { uploadStillToAtem } = require('./src/main/atem-upload');
@@ -56,6 +57,13 @@ function registerIpcHandlers() {
     });
 
     ipcMain.handle('upload-to-atem', (event, params) => uploadStillToAtem(params));
+
+    ipcMain.handle('get-app-version', () => app.getVersion());
+    ipcMain.handle('check-for-updates', () => updateCheck.checkForUpdates());
+    ipcMain.handle('open-external', (event, url) => {
+        if (!updateCheck.isAllowedExternalUrl(url)) return false;
+        return shell.openExternal(url).then(() => true);
+    });
 }
 
 app.whenReady().then(() => {

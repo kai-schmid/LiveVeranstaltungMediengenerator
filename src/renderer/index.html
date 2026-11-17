@@ -283,6 +283,12 @@
                 <button class="btn-small" id="exportBackupBtn">📤 Exportieren</button>
                 <button class="btn-small" id="importBackupBtn">📥 Importieren</button>
             </div>
+
+            <!-- Updates: Abgleich mit den GitHub-Releases -->
+            <div class="backup-row">
+                <span class="backup-label"><span id="appVersion">Version</span> · <span id="updateCheckInfo" class="update-check-info"></span></span>
+                <button class="btn-small" id="checkUpdateBtn">🔄 Nach Updates suchen</button>
+            </div>
         </details>
 
         <!-- Aktionen -->
@@ -312,6 +318,18 @@
                 <button class="btn-small" id="valueModalCancel">Abbrechen</button>
                 <button class="btn-ok" id="valueModalOk">Übernehmen</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Hinweis auf neue Version -->
+    <div class="update-banner" id="updateBanner" role="status">
+        <div class="update-banner-title">🎉 Update verfügbar</div>
+        <div class="update-banner-text" id="updateBannerText"></div>
+        <div class="update-banner-buttons">
+            <button class="btn-ok" id="updateDownloadBtn">⬇️ Herunterladen</button>
+            <button class="btn-small" id="updateNotesBtn">Was ist neu?</button>
+            <button class="btn-small" id="updateLaterBtn">Später</button>
+            <button class="btn-small" id="updateSkipBtn">Version überspringen</button>
         </div>
     </div>
 
