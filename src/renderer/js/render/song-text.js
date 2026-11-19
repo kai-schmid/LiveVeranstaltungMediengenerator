@@ -123,7 +123,7 @@ function drawText(ctx, text, x, centerY, fontPx, rowH, s, cfg) {
 }
 
 /**
- * @param pos { numberX, strophenX, centerY, rowH, numberFontPx } – bereits skaliert
+ * @param pos { numberX, strophenX, centerY, rowH, numberFontPx, strophenFontPx } – bereits skaliert
  * @param darkBoardText true, wenn die Tafel hell ist und dunkle Schrift braucht
  */
 function drawSongText(ctx, s, cfg, song, pos, darkBoardText) {
@@ -142,7 +142,7 @@ function drawSongText(ctx, s, cfg, song, pos, darkBoardText) {
         const cardOffset = cfg.text.mode === 'plain' ? 0 : CARD.offsetX * s;
         const strophenX = Math.max(pos.strophenX, numberRight + MIN_TEXT_GAP * s + cardOffset);
         const text = cfg.text.showPrefix ? `Str. ${song.str}` : song.str;
-        drawText(ctx, text, strophenX, pos.centerY, cfg.text.strophenSize * s, pos.rowH, s, cfg);
+        drawText(ctx, text, strophenX, pos.centerY, pos.strophenFontPx, pos.rowH, s, cfg);
     }
     ctx.restore();
 }

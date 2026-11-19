@@ -37,10 +37,13 @@ function readRenderConfig() {
             style: value('boardStyle'),            // 'spruce' | 'wood' | 'dark'
             opacity: percent('boxOpacity'),
             scale: percent('boardScale'),
+            widthFactor: percent('boardWidth'),    // Breite relativ zu 16:9 (1 = Standard)
+            heightFactor: percent('boardHeight'),  // Höhe relativ zu 16:9
             posX: percent('boardPosX'),
             posY: percent('boardPosY'),
             borderMode: value('borderMode'),       // 'style' | 'custom' | 'wood' | 'texture'
-            customBorder: { outer: value('customBorderColor'), inner: value('customInnerBorderColor') }
+            customBorder: { outer: value('customBorderColor'), inner: value('customInnerBorderColor') },
+            frameTint: percent('frameTextureTint')  // Tönung des Textur-Rahmens 0..1
         },
         text: {
             strophenSize: number('strophenSize'),

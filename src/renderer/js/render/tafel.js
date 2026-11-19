@@ -9,6 +9,7 @@ const BASE_WIDTH = 1920;
 const BOARD_W = 1600;
 const BOARD_H = 900;
 const MIN_ROWS = 4;
+const MAX_FONT_ROW_RATIO = 0.7;   // Schrift höchstens 70 % der Zeilenhöhe (greift erst bei niedriger Tafel)
 const LAYOUT = {
     paddingY: 40,
     colorBoxX: 55,
@@ -20,8 +21,8 @@ const LAYOUT = {
 };
 
 function boardRect(cfg, s) {
-    const w = BOARD_W * s;
-    const h = BOARD_H * s;
+    const w = BOARD_W * s * cfg.board.widthFactor;
+    const h = BOARD_H * s * cfg.board.heightFactor;
     return {
         x: (cfg.width - w) * cfg.board.posX,
         y: (cfg.height - h) * cfg.board.posY,
@@ -38,16 +39,21 @@ function useDarkBoardText(cfg, images) {
         && cfg.texture.brightness * cfg.master.brightness / 100 > 65;
 }
 
-function drawColorMarker(ctx, rect, s, color, rowY, rowH) {
+// Bei schmaler Tafel rücken Farbmarker, Nummer und Strophen proportional zusammen
+function horizontalScale(cfg, s) {
+    return s * Math.min(1, cfg.board.widthFactor);
+}
+
+function drawColorMarker(ctx, rect, s, sx, color, rowY, rowH) {
     if (color === 'transparent') return;
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
     ctx.shadowBlur = 6 * s;
     ctx.fillStyle = color;
     ctx.fillRect(
-        rect.x + LAYOUT.colorBoxX * s,
+        rect.x + LAYOUT.colorBoxX * sx,
         rowY + LAYOUT.colorBoxInsetY * s,
-        LAYOUT.colorBoxW * s,
+        LAYOUT.colorBoxW * sx,
         rowH - 2 * LAYOUT.colorBoxInsetY * s
     );
     ctx.restore();
@@ -62,16 +68,19 @@ function songRows(rect, s, count) {
 
 function drawSongs(ctx, rect, s, cfg, songs, rows, images) {
     const darkText = useDarkBoardText(cfg, images);
+    const sx = horizontalScale(cfg, s);
 
     songs.forEach((song, i) => {
         const row = rows[i];
-        drawColorMarker(ctx, rect, s, song.color, row.y, row.h);
+        const maxFontPx = row.h * MAX_FONT_ROW_RATIO;
+        drawColorMarker(ctx, rect, s, sx, song.color, row.y, row.h);
         drawSongText(ctx, s, cfg, song, {
-            numberX: rect.x + LAYOUT.numberX * s,
-            strophenX: rect.x + LAYOUT.strophenX * s,
+            numberX: rect.x + LAYOUT.numberX * sx,
+            strophenX: rect.x + LAYOUT.strophenX * sx,
             centerY: row.y + row.h / 2,
             rowH: row.h,
-            numberFontPx: LAYOUT.numberFontSize * s
+            numberFontPx: Math.min(LAYOUT.numberFontSize * s, maxFontPx),
+            strophenFontPx: Math.min(cfg.text.strophenSize * s, maxFontPx)
         }, darkText);
     });
 }

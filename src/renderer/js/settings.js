@@ -30,16 +30,18 @@ function save() {
     settingElements().forEach(el => storage.set(el.id, readElement(el)));
 }
 
-// data-enables="id" hakt eine Checkbox an, data-enables="id=wert" setzt eine Auswahl
+// data-enables="id" hakt eine Checkbox an, data-enables="id=wert" setzt eine Auswahl.
+// Bei "id=a|b" bleibt die Auswahl unverändert, wenn sie schon a oder b ist – sonst wird a gesetzt.
 function applyEnables(el) {
     if (!el.dataset.enables) return;
     const [id, value] = el.dataset.enables.split('=');
     const target = document.getElementById(id);
     if (value === undefined) {
         target.checked = true;
-    } else {
-        target.value = value;
+        return;
     }
+    const allowed = value.split('|');
+    if (!allowed.includes(target.value)) target.value = allowed[0];
 }
 
 function handleChange(el) {

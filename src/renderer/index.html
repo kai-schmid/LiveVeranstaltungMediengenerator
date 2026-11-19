@@ -145,19 +145,25 @@
                     </select>
                 </div>
                 <div class="color-inline">
-                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render" data-enables="borderMode=custom">
+                    <input type="color" id="customBorderColor" value="#8b5a2b" data-setting="render" data-enables="borderMode=custom|texture">
                     <label for="customBorderColor">Außenrand</label>
                 </div>
                 <div class="color-inline">
-                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render" data-enables="borderMode=custom">
+                    <input type="color" id="customInnerBorderColor" value="#4a2e14" data-setting="render" data-enables="borderMode=custom|texture">
                     <label for="customInnerBorderColor">Zierlinie & Leisten</label>
                 </div>
+            </div>
+            <div class="frame-tint-row">
+                <label>Rand-Tönung bei Holz-Textur (<span id="frameTintVal" class="val-edit" title="Klicken für genauen Wert">50</span>%)</label>
+                <input type="range" id="frameTextureTint" min="0" max="100" step="any" value="50"
+                       data-setting="render" data-display="frameTintVal" data-precise="Rand-Tönung"
+                       data-enables="borderMode=texture">
             </div>
 
             <!-- Größe, Position & Strophen-Schriftgröße -->
             <div class="slider-grid section-divider">
                 <div>
-                    <label>Tafel 16:9 (<span id="scaleVal" class="val-edit" title="Klicken für genauen Wert">100</span>%)</label>
+                    <label>Tafel-Größe (<span id="scaleVal" class="val-edit" title="Klicken für genauen Wert">100</span>%)</label>
                     <input type="range" id="boardScale" min="30" max="120" step="any" value="100"
                            data-setting="render" data-display="scaleVal" data-precise="Tafel-Größe">
                 </div>
@@ -175,6 +181,24 @@
                     <label>Strophen (<span id="strSizeVal">95</span>px)</label>
                     <input type="range" id="strophenSize" min="65" max="140" value="95"
                            data-setting="render" data-display="strSizeVal">
+                </div>
+            </div>
+
+            <!-- Breite & Höhe der Tafel (bestimmen das Seitenverhältnis) -->
+            <div class="board-ratio-row">
+                <div>
+                    <label>Breite (<span id="boardWidthVal" class="val-edit" title="Klicken für genauen Wert">100</span>%)</label>
+                    <input type="range" id="boardWidth" min="40" max="120" step="any" value="100"
+                           data-setting="render" data-display="boardWidthVal" data-precise="Tafel-Breite">
+                </div>
+                <div>
+                    <label>Höhe (<span id="boardHeightVal" class="val-edit" title="Klicken für genauen Wert">100</span>%)</label>
+                    <input type="range" id="boardHeight" min="40" max="120" step="any" value="100"
+                           data-setting="render" data-display="boardHeightVal" data-precise="Tafel-Höhe">
+                </div>
+                <div class="board-ratio-info">
+                    <span>Verhältnis <b id="boardRatio">16:9</b></span>
+                    <button class="btn-small" id="resetRatioBtn" title="Breite & Höhe auf 100 % (16:9) zurücksetzen">↺ 16:9</button>
                 </div>
             </div>
 

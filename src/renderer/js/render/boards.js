@@ -1,6 +1,7 @@
 // Zeichnet die Tafel selbst (Oberfläche + Rahmen) und die Einschubleisten zwischen den Zeilen.
 const { drawImageFill, applyTint } = require('./image-fill');
 const { shade, averageColor } = require('./color');
+const { withHorizontalGrain } = require('./grain-direction');
 
 // ---------- Rahmen ----------
 
@@ -24,17 +25,44 @@ function drawFrame(ctx, rect, s, colors) {
 // Aus welcher Höhe (Anteil der Tafelhöhe) die Holzstreifen für die vier Leisten entnommen werden –
 // bewusst zwischen den Brettfugen der prozeduralen Maserung und je Seite verschieden
 const FRAME_STRIP_SOURCE_Y = { top: 0.06, bottom: 0.56, left: 0.31, right: 0.81 };
-const FRAME_TEXTURE_SHADE = 0.22;   // Rahmen etwas dunkler als die Tafelfläche
+const FRAME_TEXTURE_SHADE = 0.22;   // Rahmen ohne Tönung etwas dunkler als die Tafelfläche
 
-/** Zeichnet die Holzoberfläche einmal in ein unsichtbares Canvas, aus dem die Leisten geschnitten werden */
+/**
+ * Zeichnet die Holzoberfläche einmal in ein unsichtbares Canvas, aus dem die Leisten geschnitten werden.
+ * Die Fasern liegen darin immer waagerecht – ein Foto mit senkrechter Maserung wird dafür gedreht.
+ */
 function renderWoodCanvas(rect, s, cfg, images, style) {
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(Math.max(rect.w, rect.h));
     canvas.height = Math.ceil(rect.h);
     const woodStyle = style.drawGrain ? style : BOARD_STYLES.wood;   // Modern-Stil: dunkles Holz
+    const woodImages = images.texture
+        ? { ...images, texture: withHorizontalGrain(images.texture) }
+        : images;
     drawWoodSurface(canvas.getContext('2d'),
-        { x: 0, y: 0, w: canvas.width, h: canvas.height }, s, cfg, images, woodStyle);
+        { x: 0, y: 0, w: canvas.width, h: canvas.height }, s, cfg, woodImages, woodStyle);
     return canvas;
+}
+
+/** Färbt die Rahmenfläche ein, die Maserung bleibt sichtbar (multiplizieren + Farbton übernehmen) */
+function tintFrameRing(ctx, rect, fw, color, strength) {
+    if (strength <= 0) return;
+    const baseAlpha = ctx.globalAlpha;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+    ctx.rect(rect.x + fw, rect.y + fw, rect.w - 2 * fw, rect.h - 2 * fw);
+    ctx.clip('evenodd');
+    ctx.fillStyle = color;
+
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = baseAlpha * strength;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+    ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = baseAlpha * strength * 0.6;
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.restore();
 }
 
 function clipPolygon(ctx, points) {
@@ -46,9 +74,10 @@ function clipPolygon(ctx, points) {
 
 /**
  * Rahmen wie aus vier Holzleisten mit Gehrung: oben/unten waagerechte, links/rechts senkrechte Maserung.
- * @param innerColor Farbe der Zierlinie auf der Innenseite
+ * @param colors   { outer: Tönungsfarbe des Holzes, inner: Farbe der Zierlinie }
+ * @param strength Stärke der Tönung 0..1
  */
-function drawTexturedFrame(ctx, rect, s, wood, innerColor) {
+function drawTexturedFrame(ctx, rect, s, wood, colors, strength) {
     const { x, y, w, h } = rect;
     const fw = FRAME_WIDTH * s;
     const srcY = key => Math.min(wood.height - fw, FRAME_STRIP_SOURCE_Y[key] * wood.height);
@@ -89,12 +118,17 @@ function drawTexturedFrame(ctx, rect, s, wood, innerColor) {
         ctx.restore();
     });
 
-    // Rahmen insgesamt etwas abdunkeln, damit er sich von der Tafel abhebt
-    ctx.beginPath();
-    ctx.rect(x, y, w, h);
-    ctx.rect(x + fw, y + fw, w - 2 * fw, h - 2 * fw);
-    ctx.fillStyle = `rgba(0, 0, 0, ${FRAME_TEXTURE_SHADE})`;
-    ctx.fill('evenodd');
+    tintFrameRing(ctx, rect, fw, colors.outer, strength);
+
+    // Ungetönt etwas abdunkeln, damit sich der Rahmen von der Tafel abhebt
+    const shadeAlpha = FRAME_TEXTURE_SHADE * (1 - strength);
+    if (shadeAlpha > 0) {
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.rect(x + fw, y + fw, w - 2 * fw, h - 2 * fw);
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadeAlpha})`;
+        ctx.fill('evenodd');
+    }
 
     // Gehrungsfugen an den Ecken
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
@@ -116,7 +150,7 @@ function drawTexturedFrame(ctx, rect, s, wood, innerColor) {
 
     // Zierlinie innen
     ctx.lineWidth = 3 * s;
-    ctx.strokeStyle = innerColor;
+    ctx.strokeStyle = colors.inner;
     ctx.strokeRect(x + fw, y + fw, w - fw * 2, h - fw * 2);
     ctx.restore();
 }
@@ -301,8 +335,8 @@ function resolveTrim(ctx, rect, s, cfg, style) {
         case 'wood':
             return trimFromWoodColor(ctx, rect, s);
         case 'texture': {
-            // Leisten & Zierlinie farblich aus dem Holz, Rahmen selbst aus der Textur
-            const trim = trimFromWoodColor(ctx, rect, s);
+            // Rahmen aus der Textur, getönt mit der Außenrand-Farbe; Zierlinie & Leisten in eigener Farbe
+            const trim = trimFromColors(cfg.board.customBorder.outer, cfg.board.customBorder.inner);
             trim.textured = true;
             return trim;
         }
@@ -329,7 +363,7 @@ function drawBoard(ctx, rect, s, cfg, images) {
 
     if (trim.textured) {
         const wood = renderWoodCanvas(rect, s, cfg, images, style);
-        drawTexturedFrame(ctx, rect, s, wood, trim.frame.inner);
+        drawTexturedFrame(ctx, rect, s, wood, trim.frame, cfg.board.frameTint);
     } else if (trim.frame) {
         drawFrame(ctx, rect, s, trim.frame);
     } else {
